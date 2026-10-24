@@ -6,7 +6,7 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
-    "schemas": "node scripts/register-schemas.mjs"
+    "schemas": "node --env-file=.env.local scripts/register-schemas.cjs"
   },
   "dependencies": {
     "@ethereum-attestation-service/eas-sdk": "^2.7.0",
