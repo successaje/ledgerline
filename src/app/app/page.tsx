@@ -24,6 +24,8 @@ import { encodeBundle, encodeEmployerRequest, type Bundle } from "@/domain/bundl
 import type { PayRecord, PayStatus } from "@/domain/types";
 import { PAY_STATUS } from "@/domain/types";
 import { CHAIN_NAME } from "@/services/chain";
+import { logEvent } from "@/services/analytics";
+import { Pwa } from "@/components/ui/Pwa";
 
 type SheetName = "employer" | "pick" | "bundle" | "backup" | "restore" | "month" | "settings" | null;
 
@@ -59,13 +61,14 @@ function AppInner() {
 
   const record = useCallback(async (period: number, status?: PayStatus, amount?: number, note?: string) => {
     setOpenPeriod(period);
-    try { await L.record(period, status, amount, note); push({ kind: "success", title: "Month recorded", body: "Signed by your key and written to the chain." }); }
-    catch (e) { fail(e); }
+    logEvent("record_started");
+    try { await L.record(period, status, amount, note); logEvent("record_done"); push({ kind: "success", title: "Month recorded", body: "Signed by your key and written to the chain." }); }
+    catch (e) { logEvent("record_failed"); fail(e); }
   }, [L, push]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const prove = useCallback(async (period: number) => {
-    try { await L.prove(period); push({ kind: "success", title: "Bank proof recorded", body: "Only the pay window was disclosed." }); }
-    catch (e) { fail(e); }
+    try { await L.prove(period); logEvent("proof_done"); push({ kind: "success", title: "Bank proof recorded", body: "Only the pay window was disclosed." }); }
+    catch (e) { logEvent("proof_failed"); fail(e); }
   }, [L, push]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sync = useCallback(async () => {
@@ -81,6 +84,7 @@ function AppInner() {
     if (!items.length) { push({ kind: "info", title: "Nothing to confirm", body: "Every recorded month already has an answer from the employer." }); return; }
     const req = encodeEmployerRequest({ worker: L.address, workerName: L.ledger.profile.name, employerLabel: L.ledger.profile.employerLabel, items });
     setEmployerUrl(`${window.location.origin}/employer?c=${req}`);
+    logEvent("employer_link_created", { months: items.length });
     setSheet("employer");
   }, [L, push]);
 
@@ -92,6 +96,7 @@ function AppInner() {
     }));
     const b: Bundle = { v: 1, worker: { address: L.address, name: L.ledger.profile.name }, employer: { label: L.ledger.profile.employerLabel, id: L.ledger.profile.employerId }, bankAttestor: config.bankAttestor, issuedAt: Date.now(), items };
     setBundleUrl(`${window.location.origin}/verify?b=${encodeBundle(b)}`);
+    logEvent("bundle_created", { months: items.length });
     setSheet("bundle");
   }, [L, config]);
 
@@ -104,7 +109,7 @@ function AppInner() {
   }
 
   if (!L.ledger) {
-    return <Shell wide nav={nav}>{cfgError && <div style={{ marginBottom: 16 }}><Notice kind="error" title="Cannot reach the server">{cfgError}</Notice></div>}<Onboarding onStart={L.start} onSample={L.loadSample} onRestore={() => setSheet("restore")} /><RecoverySheet open={sheet === "restore"} onClose={() => setSheet(null)} mode="restore" onRestore={L.recover} /></Shell>;
+    return <Shell wide nav={nav}>{cfgError && <div style={{ marginBottom: 16 }}><Notice kind="error" title="Cannot reach the server">{cfgError}</Notice></div>}<Onboarding onStart={i => { logEvent("onboarding_started"); L.start(i); }} onSample={() => { logEvent("sample_loaded"); L.loadSample(); }} onRestore={() => setSheet("restore")} /><RecoverySheet open={sheet === "restore"} onClose={() => setSheet(null)} mode="restore" onRestore={L.recover} /></Shell>;
   }
 
   const ledger = L.ledger;
@@ -116,6 +121,7 @@ function AppInner() {
         {L.lastError && !busy && (
           <Notice kind="error" title={L.lastError.title} action={<Button size="sm" onClick={L.clearError} icon={<Icon name="x" size={14} />}>Dismiss</Button>}>{L.lastError.hint}</Notice>
         )}
+        <Pwa worthInstalling={L.stats.recorded > 0} />
         <Today name={ledger.profile.name} due={L.due} news={L.news} busy={busy || !ready}
           onRecordDue={(p, s) => { L.addMonth(p, s); void record(p, s); }}
           onRecordDrafts={() => L.recordAllPending().catch(() => {})}
@@ -150,7 +156,7 @@ function AppInner() {
         onRecord={(p, s, a, n) => { if (!editing) L.addMonth(p, s, a, n); return record(p, s, a, n); }} />
       <SettingsSheet open={sheet === "settings"} onClose={() => setSheet(null)} profile={ledger.profile} address={L.address}
         fastForward={ff} onFastForward={setFastForward}
-        onSave={p => { L.updateProfile(p); push({ kind: "success", title: "Settings saved" }); }}
+        onSave={p => { L.updateProfile(p); logEvent("settings_saved"); push({ kind: "success", title: "Settings saved" }); }}
         onBackup={() => setSheet("backup")} onExport={L.exportJson}
         onReset={() => { if (confirm("Clear this record from this device? On-chain records remain and can be restored with your recovery words.")) { L.reset(); setSheet(null); } }} />
     </Shell>
