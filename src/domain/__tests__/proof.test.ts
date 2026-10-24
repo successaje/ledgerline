@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { Wallet } from "ethers";
+import { Wallet, type BaseWallet } from "ethers";
 import { verifyProofJson, describePredicate, type ProofPayload } from "../proof";
 import { hashText } from "../ids";
 
-async function signedProof(attestor: Wallet, satisfied = true) {
+async function signedProof(attestor: BaseWallet, satisfied = true) {
   const payload: ProofPayload = {
     method: 2,
     predicate: { kind: "no-credit-in-window", bank: "test", from: "2026-07-01", to: "2026-07-10", minAmountCents: 60000, counterparty: "TAN" },
