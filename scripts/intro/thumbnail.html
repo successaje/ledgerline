@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  * { box-sizing:border-box; margin:0; }
+  html,body { width:1280px; height:720px; overflow:hidden; background:#F7F8F4; color:#172C2A; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .wrap { position:absolute; inset:0; display:grid; grid-template-columns: 620px 500px; gap:40px; align-items:center; padding:0 60px; }
+  .brand { display:flex; align-items:center; gap:14px; font-size:40px; font-weight:700; letter-spacing:-.02em; }
+  .m { width:52px; height:52px; border-radius:12px; background:#17191C; display:grid; place-items:center; }
+  .m i { display:block; width:24px; height:4px; border-radius:2px; background:#F7F5F0; margin:3px 0; } .m i:last-child { background:#34D399; }
+  .brand b { color:#145C52; }
+  h1 { font-size:74px; line-height:1.02; font-weight:750; letter-spacing:-.03em; margin-top:26px; }
+  .sub { font-size:28px; color:#52635F; margin-top:22px; line-height:1.35; }
+  .tag { display:inline-block; margin-top:26px; font-size:22px; font-weight:700; color:#6D4A00; background:#FFF2D6; padding:10px 20px; border-radius:999px; }
+  .card { background:#fff; border:2px solid #DCE3DF; border-radius:26px; padding:30px; box-shadow:0 24px 60px rgba(23,44,42,.12); }
+  .month { font-size:36px; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  .pill { font-size:20px; font-weight:700; background:#FFF2D6; color:#6D4A00; padding:8px 18px; border-radius:999px; }
+  .cells { display:grid; gap:14px; margin-top:26px; }
+  .cell { display:flex; justify-content:space-between; align-items:baseline; background:#F7F8F4; border:1px solid #DCE3DF; border-radius:16px; padding:16px 22px; }
+  .cell .k { font-size:24px; color:#52635F; } .cell .v { font-size:40px; font-weight:750; font-variant-numeric:tabular-nums; } .cell .v.red { color:#9A3527; }
+  .cell .n { font-size:18px; color:#52635F; }
+</style></head><body><div class="wrap">
+  <div>
+    <div class="brand"><div class="m"><i></i><i></i><i></i></div><span>Ledger<b>line</b></span></div>
+    <h1>Keep a clear record of your pay</h1>
+    <div class="sub">For migrant domestic workers. Record each month, your employer responds, share only what you choose.</div>
+    <span class="tag">Demo · Base Sepolia test network</span>
+  </div>
+  <div class="card">
+    <div class="month">July 2026 <span class="pill">Partly paid</span></div>
+    <div class="cells">
+      <div class="cell"><span class="k">Expected</span><span class="v">S$700</span></div>
+      <div class="cell"><span class="k">Recorded received</span><span class="v">S$500</span></div>
+      <div class="cell"><span class="k">Difference</span><span><span class="v red">S$200</span></span></div>
+    </div>
+  </div>
+</div></body></html>
