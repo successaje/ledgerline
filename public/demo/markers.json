@@ -1,0 +1,54 @@
+[
+  {
+    "t": 0,
+    "name": "landing"
+  },
+  {
+    "t": 12.7,
+    "name": "home"
+  },
+  {
+    "t": 16.1,
+    "name": "record-flow"
+  },
+  {
+    "t": 36.9,
+    "name": "review"
+  },
+  {
+    "t": 43.3,
+    "name": "publishing"
+  },
+  {
+    "t": 50.6,
+    "name": "recorded"
+  },
+  {
+    "t": 63.2,
+    "name": "employer"
+  },
+  {
+    "t": 73.9,
+    "name": "employer-done"
+  },
+  {
+    "t": 118.3,
+    "name": "response-on-record"
+  },
+  {
+    "t": 134.8,
+    "name": "share"
+  },
+  {
+    "t": 142.3,
+    "name": "verifier"
+  },
+  {
+    "t": 148.3,
+    "name": "close"
+  },
+  {
+    "t": 152.1,
+    "name": "end"
+  }
+]

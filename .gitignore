@@ -11,3 +11,4 @@ public/demo/*.webm
 test-results/
 playwright-report/
 public/demo/*.webm
+public/demo/intro.webm
