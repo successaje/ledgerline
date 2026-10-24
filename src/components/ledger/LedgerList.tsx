@@ -4,34 +4,34 @@ import type { Activity } from "@/hooks/useLedger";
 import type { Ledger, PayRecord } from "@/domain/types";
 import { PAY_STATUS, PROOF_METHOD } from "@/domain/types";
 import { daysSince, periodLabel, sgd, shortAddr } from "@/domain/format";
+import { employerState as employerStateOf } from "@/domain/due";
 import { explorer } from "@/services/chain";
 import { Pill } from "@/components/ui/Pill";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Stages } from "@/components/ui/Stages";
 
-export const CONFIRM_WINDOW_DAYS = 3;
-
 type Props = {
   ledger: Ledger;
   activity: Activity | null;
   fastForward: boolean;
   busy: boolean;
+  openPeriod: number | null;
+  onOpenPeriod: (p: number | null) => void;
   onRecord: (period: number, status: 1 | 2) => void;
+  onEdit: (record: PayRecord) => void;
   onProve: (period: number) => void;
   onAskEmployer: () => void;
 };
 
-function employerState(r: PayRecord, ff: boolean) {
-  if (r.countersign) return r.countersign.decision === 1 ? "confirmed" : "disputed";
-  if (!r.payEventUID) return "none";
-  const d = r.signedAt ? daysSince(r.signedAt) : 0;
-  return (ff ? Math.max(d, CONFIRM_WINDOW_DAYS + 0.5) : d) >= CONFIRM_WINDOW_DAYS ? "silent" : "waiting";
-}
-
-export function LedgerList({ ledger, activity, fastForward, busy, onRecord, onProve, onAskEmployer }: Props) {
-  const [open, setOpen] = useState<number | null>(() => ledger.records.find(r => r.status === PAY_STATUS.UNPAID)?.period ?? null);
+export function LedgerList({ ledger, activity, fastForward, busy, openPeriod, onOpenPeriod, onRecord, onEdit, onProve, onAskEmployer }: Props) {
+  const open = openPeriod;
+  const setOpen = onOpenPeriod;
   const rows = [...ledger.records].sort((a, b) => b.period - a.period);
+  const CONFIRM_WINDOW_DAYS = ledger.profile.confirmWindowDays;
+  const employerState = (r: PayRecord, ff: boolean) => employerStateOf(r, CONFIRM_WINDOW_DAYS, ff);
+  const years = new Set(rows.map(r => Math.floor(r.period / 100)));
+  const showYears = years.size > 1 || rows.length > 12;
 
   return (
     <div className="ledger">
@@ -42,17 +42,20 @@ export function LedgerList({ ledger, activity, fastForward, busy, onRecord, onPr
         </div>
         <Pill tone="outline">{rows.length} months</Pill>
       </div>
-      {rows.map(r => {
+      {rows.map((r, idx) => {
         const unpaid = r.status === PAY_STATUS.UNPAID;
+        const partial = r.status === PAY_STATUS.PARTIAL;
+        const yearHead = showYears && (idx === 0 || Math.floor(rows[idx - 1].period / 100) !== Math.floor(r.period / 100));
         const es = employerState(r, fastForward);
         const isOpen = open === r.period;
         const act = activity?.period === r.period ? activity : null;
         const days = r.signedAt ? Math.floor(fastForward ? Math.max(daysSince(r.signedAt), CONFIRM_WINDOW_DAYS) : daysSince(r.signedAt)) : 0;
         return (
-          <div key={r.period}>
+          <div key={r.period} id={`month-${r.period}`}>
+            {yearHead && <div className="year-head">{Math.floor(r.period / 100)}</div>}
             <button className="row" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : r.period)}>
               <div>
-                <div className="row-title">{periodLabel(r.period)}{unpaid && <Pill tone="bad" dot>Not paid</Pill>}</div>
+                <div className="row-title">{periodLabel(r.period)}{unpaid && <Pill tone="bad" dot>Not paid</Pill>}{partial && <Pill tone="warn" dot>Partly paid</Pill>}</div>
                 <div className="row-sub">
                   <span className="num">{sgd(r.amountCents)}</span>
                   {!r.payEventUID && <span className="faint">not recorded yet</span>}
@@ -75,7 +78,8 @@ export function LedgerList({ ledger, activity, fastForward, busy, onRecord, onPr
                 ) : (
                   <>
                     <dl className="kv">
-                      <dt>Status</dt><dd>{unpaid ? "You marked this month as not paid" : "You marked this month as paid"}</dd>
+                      <dt>Status</dt><dd>{unpaid ? "You marked this month as not paid" : partial ? `You marked this month as partly paid (${sgd(r.amountCents)})` : "You marked this month as paid"}</dd>
+                      {r.note && <><dt>Note</dt><dd>{r.note}</dd></>}
                       <dt>Record</dt>
                       <dd>{r.payEventUID ? <a href={explorer.attestation(r.payEventUID)} target="_blank" rel="noreferrer">Signed {r.signedAt ? new Date(r.signedAt).toLocaleDateString("en-SG") : ""} <Icon name="link" size={12} /></a> : <span className="faint">Not on chain yet</span>}</dd>
                       <dt>Employer</dt>
@@ -99,6 +103,7 @@ export function LedgerList({ ledger, activity, fastForward, busy, onRecord, onPr
                       {!r.payEventUID && <Button variant="ghost" disabled={busy} onClick={() => onRecord(r.period, unpaid ? 1 : 2)}>{unpaid ? "Mark as paid instead" : "Mark as not paid"}</Button>}
                       {r.payEventUID && unpaid && !r.proof && <Button variant="accent" disabled={busy} onClick={() => onProve(r.period)} icon={<Icon name="bank" size={16} />}>Prove from my bank</Button>}
                       {r.payEventUID && (es === "waiting" || es === "silent") && <Button variant="ghost" disabled={busy} onClick={onAskEmployer} icon={<Icon name="whatsapp" size={16} />}>Remind employer</Button>}
+                      <Button variant="ghost" disabled={busy} onClick={() => onEdit(r)}>{r.payEventUID ? "Edit or re-record" : "Edit draft"}</Button>
                     </div>
                   </>
                 )}

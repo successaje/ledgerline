@@ -2,18 +2,17 @@
 import type { Ledger } from "@/domain/types";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { shortAddr } from "@/domain/format";
-import { explorer } from "@/services/chain";
 
 type Props = {
   ledger: Ledger; address: string;
   stats: { months: number; recorded: number; confirmed: number; unpaid: number; pending: number };
   syncing: boolean; busy: boolean;
-  fastForward: boolean; onFastForward: (v: boolean) => void;
-  onRecordAll: () => void; onSync: () => void; onAskEmployer: () => void; onBundle: () => void; onReset: () => void; onBackup: () => void;
+  onRecordAll: () => void; onSync: () => void; onAskEmployer: () => void; onBundle: () => void; onAddMonth: () => void; onSettings: () => void;
+  children?: React.ReactNode;
 };
 
-export function SidePanel({ ledger, address, stats, syncing, busy, fastForward, onFastForward, onRecordAll, onSync, onAskEmployer, onBundle, onReset, onBackup }: Props) {
+export function SidePanel({ ledger, address, stats, syncing, busy, onRecordAll, onSync, onAskEmployer, onBundle, onAddMonth, onSettings, children }: Props) {
+  void ledger; void address;
   return (
     <aside className="app-side" style={{ display: "grid", gap: 16 }}>
       <div className="stats">
@@ -27,21 +26,12 @@ export function SidePanel({ ledger, address, stats, syncing, busy, fastForward, 
         <Button block disabled={busy || stats.recorded === 0} onClick={onAskEmployer} icon={<Icon name="whatsapp" />}>Ask employer to confirm</Button>
         <Button block disabled={busy || stats.recorded === 0} loading={syncing} onClick={onSync} icon={<Icon name="refresh" />}>Check for confirmations</Button>
         <Button variant="accent" block disabled={busy || stats.recorded === 0} onClick={onBundle} icon={<Icon name="shield" />}>Build dispute bundle</Button>
-      </div>
-      <details className="panel panel-pad small">
-        <summary style={{ cursor: "pointer", fontWeight: 560 }}>About this record</summary>
-        <div style={{ display: "grid", gap: 8, marginTop: 10 }} className="muted">
-          <div>Your signing key <a className="mono" href={explorer.address(address)} target="_blank" rel="noreferrer">{shortAddr(address)}</a> lives on this device. Every month you record is signed by it.</div>
-          <div>Names and notes never leave this phone. On chain: a hash of your key, a hash of the employer label, the month, the amount, paid or not.</div>
-          {ledger.profile.sample && <div>This is the sample record. Records you make with it are real test-network attestations.</div>}
-          <Button size="sm" onClick={onBackup} icon={<Icon name="lock" size={14} />}>Back up my key</Button>
-          <label style={{ display: "flex", gap: 8, alignItems: "center", cursor: "pointer" }}>
-            <input type="checkbox" checked={fastForward} onChange={e => onFastForward(e.target.checked)} />
-            <span>Demo: treat the employer window as elapsed</span>
-          </label>
-          <Button variant="danger" size="sm" onClick={onReset} icon={<Icon name="x" size={14} />}>Clear this record from this device</Button>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          <Button block disabled={busy} onClick={onAddMonth} icon={<Icon name="arrow" />}>Add a month</Button>
+          <Button block variant="ghost" onClick={onSettings} icon={<Icon name="info" />}>Settings</Button>
         </div>
-      </details>
+      </div>
+      {children}
     </aside>
   );
 }

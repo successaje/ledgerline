@@ -41,10 +41,20 @@ export type Profile = {
   employerId: string;
   salaryCents: number;
   payWindow: { fromDay: number; toDay: number };
+  /** Days the employer has to answer before silence is shown as evidence. */
+  confirmWindowDays: number;
   sample?: boolean;
 };
 
-export type Ledger = { profile: Profile; records: PayRecord[] };
+/** Per-device bookkeeping that never goes on chain. */
+export type LedgerMeta = {
+  createdAt: number;
+  lastSeenAt?: number;
+  lastSyncAt?: number;
+  dismissed?: Record<string, number>;
+};
+
+export type Ledger = { profile: Profile; records: PayRecord[]; meta: LedgerMeta };
 
 /** Stages of a signed record reaching the chain. Shown to the user as a stepper. */
 export type TxStage = "preparing" | "signing" | "submitting" | "confirming" | "done" | "error";
