@@ -10,10 +10,10 @@ type Props = {
   stats: { months: number; recorded: number; confirmed: number; unpaid: number; pending: number };
   syncing: boolean; busy: boolean;
   fastForward: boolean; onFastForward: (v: boolean) => void;
-  onRecordAll: () => void; onSync: () => void; onAskEmployer: () => void; onBundle: () => void; onReset: () => void;
+  onRecordAll: () => void; onSync: () => void; onAskEmployer: () => void; onBundle: () => void; onReset: () => void; onBackup: () => void;
 };
 
-export function SidePanel({ ledger, address, stats, syncing, busy, fastForward, onFastForward, onRecordAll, onSync, onAskEmployer, onBundle, onReset }: Props) {
+export function SidePanel({ ledger, address, stats, syncing, busy, fastForward, onFastForward, onRecordAll, onSync, onAskEmployer, onBundle, onReset, onBackup }: Props) {
   return (
     <aside className="app-side" style={{ display: "grid", gap: 16 }}>
       <div className="stats">
@@ -34,6 +34,7 @@ export function SidePanel({ ledger, address, stats, syncing, busy, fastForward, 
           <div>Your signing key <a className="mono" href={explorer.address(address)} target="_blank" rel="noreferrer">{shortAddr(address)}</a> lives on this device. Every month you record is signed by it.</div>
           <div>Names and notes never leave this phone. On chain: a hash of your key, a hash of the employer label, the month, the amount, paid or not.</div>
           {ledger.profile.sample && <div>This is the sample record. Records you make with it are real test-network attestations.</div>}
+          <Button size="sm" onClick={onBackup} icon={<Icon name="lock" size={14} />}>Back up my key</Button>
           <label style={{ display: "flex", gap: 8, alignItems: "center", cursor: "pointer" }}>
             <input type="checkbox" checked={fastForward} onChange={e => onFastForward(e.target.checked)} />
             <span>Demo: treat the employer window as elapsed</span>

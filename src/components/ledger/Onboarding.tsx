@@ -5,10 +5,10 @@ import { Field, TextInput, MoneyInput } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { currentPeriod, prevPeriod } from "@/domain/format";
 
-type Props = { onStart: (i: { name: string; employerLabel: string; salaryCents: number; startPeriod: number; endPeriod: number }) => void; onSample: () => void };
+type Props = { onStart: (i: { name: string; employerLabel: string; salaryCents: number; startPeriod: number; endPeriod: number }) => void; onSample: () => void; onRestore: () => void };
 
 /** First visit. A key already exists on the device; this only collects what the ledger needs. */
-export function Onboarding({ onStart, onSample }: Props) {
+export function Onboarding({ onStart, onSample, onRestore }: Props) {
   const [name, setName] = useState("");
   const [employer, setEmployer] = useState("");
   const [salary, setSalary] = useState("");
@@ -62,6 +62,10 @@ export function Onboarding({ onStart, onSample }: Props) {
           <h3>Just looking?</h3>
           <p className="small muted">Load a sample record: Maria, nine months at S$600, July unpaid. Everything you do with it is real: signatures, chain records, proofs.</p>
           <Button onClick={onSample} icon={<Icon name="bank" />}>Load sample record</Button>
+          <hr className="divider" />
+          <h3>Already have a record?</h3>
+          <p className="small muted">Restore it on this phone with your recovery words. Months, employer answers and proofs are read back from the chain.</p>
+          <Button onClick={onRestore} icon={<Icon name="refresh" />}>Restore from recovery words</Button>
           <hr className="divider" />
           <ul className="small muted" style={{ paddingLeft: 18, margin: 0, display: "grid", gap: 6 }}>
             <li>No wallet, gas or seed phrase. The app holds your key.</li>
