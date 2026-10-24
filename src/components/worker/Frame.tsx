@@ -35,7 +35,7 @@ export function Frame({ children, hideNav }: { children: (ctx: ReturnType<typeof
   return (
     <WorkerShell hideNav={hideNav} demo={ledger.meta.demo} onResetDemo={() => L.loadSample()} onExitDemo={() => { L.reset(); router.replace("/"); }}>
       <div className="stack">
-        {!ready && !cfgError && <Notice kind="warn" title={t("ap_not_ready_title")}>{t("ap_not_ready_text")}</Notice>}
+        {ctx.config && !ready && !cfgError && <Notice kind="warn" title={t("ap_not_ready_title")}>{t("ap_not_ready_text")}</Notice>}
         {cfgError && <Notice kind="error" title={t("ap_no_server_title")}>{cfgError}</Notice>}
         {L.lastError && !busy && (
           <Notice kind="error" title={errTitle(L.lastError)} action={<Button size="sm" onClick={L.clearError} icon={<Icon name="x" size={14} />}>{t("ap_dismiss")}</Button>}>{errText(L.lastError)}</Notice>

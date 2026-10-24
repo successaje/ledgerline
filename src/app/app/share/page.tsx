@@ -31,7 +31,7 @@ function Share() {
         if (!config) return;
         const periods = Object.entries(sel).filter(([, v]) => v).map(([k]) => Number(k));
         const items = ledger.records.filter(r => periods.includes(r.period) && r.payEventUID).map(r => ({
-          period: r.period, amountCents: r.amountCents, status: r.status, payEventUID: r.payEventUID!, countersignUID: r.countersign?.uid,
+          period: r.period, amountCents: r.amountCents, status: r.status, expectedCents: amounts(r, ledger.profile.salaryCents).expected, payEventUID: r.payEventUID!, countersignUID: r.countersign?.uid,
           proof: r.proof?.proofJson ? { uid: r.proof.uid, proofJson: r.proof.proofJson } : undefined,
         }));
         const b: Bundle = { v: 1, worker: { address: L.address, name: ledger.profile.name }, employer: { label: ledger.profile.employerLabel, id: ledger.profile.employerId }, bankAttestor: config.bankAttestor, issuedAt: Date.now(), responseWindowDays: ledger.profile.confirmWindowDays, items };

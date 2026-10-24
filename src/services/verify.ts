@@ -98,7 +98,9 @@ export async function verifyItem(bundle: Bundle, item: BundleItem, schemas: { co
   const month = periodLabel(item.period, true);
   const who = bundle.worker.name;
   const emp = employer === "acknowledged" ? "The employer acknowledged this statement." : employer === "disagreed" ? "The employer disagreed with this statement." : employer === "awaiting" ? "The employer's response window is still open." : employer === "unknown" ? "The employer response could not be looked up." : "No employer response was recorded by the deadline.";
-  const stated = item.status === PAY_STATUS.UNPAID ? `recorded this month as not paid (${sgd(item.amountCents)} expected)` : item.status === PAY_STATUS.PARTIAL ? `recorded this month as partly paid (${sgd(item.amountCents)} received)` : `recorded ${sgd(item.amountCents)} as paid`;
+  const expected = typeof item.expectedCents === "number" ? item.expectedCents : item.status === PAY_STATUS.UNPAID && item.amountCents > 0 ? item.amountCents : undefined;
+  const exp = expected !== undefined ? ` of ${sgd(expected)} expected` : "";
+  const stated = item.status === PAY_STATUS.UNPAID ? `recorded this month as not paid${expected !== undefined ? ` (${sgd(expected)} expected, nothing received)` : ""}` : item.status === PAY_STATUS.PARTIAL ? `recorded this month as partly paid (${sgd(item.amountCents)} received${exp})` : `recorded ${sgd(item.amountCents)} as paid in full`;
   const sentence = `${month}: ${who} ${stated}. ${emp} ${bankSentence}`.trim();
   return { item, checks, sentence, employerKey: chosen?.attester, found, paymentLabel: label };
 }

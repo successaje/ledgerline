@@ -18,7 +18,7 @@ export function WorkerShell({ children, demo, onResetDemo, onExitDemo, hideNav }
         <header className="topbar">
           <div className="container topbar-inner" style={{ maxWidth: "var(--w-site)" }}>
             <Brand href="/app" />
-            <span className="env-label" title={t("nv_env_title", { chain: CHAIN_NAME })}>{t("nv_env")} · {CHAIN_NAME}</span>
+            <span className="env-label" title={t("nv_env_title", { chain: CHAIN_NAME })}>{t("nv_env")}<span className="hide-xs"> · {CHAIN_NAME}</span></span>
           </div>
         </header>
         {demo && (

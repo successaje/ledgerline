@@ -7,7 +7,7 @@ import { LinkButton, Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { ShareSheet } from "@/components/ledger/ShareSheet";
 import { submissionOf } from "@/domain/types";
-import { employerView, isShort } from "@/domain/paybook";
+import { employerView, isShort, employerRequestItems } from "@/domain/paybook";
 import { encodeEmployerRequest } from "@/domain/bundle";
 import { useToast } from "@/hooks/useToast";
 import { logEvent } from "@/services/analytics";
@@ -35,7 +35,7 @@ function RecordsInner() {
       });
       const years = [...new Set(shown.map(r => Math.floor(r.period / 100)))];
       const ask = () => {
-        const items = ledger.records.filter(r => r.payEventUID && !r.countersign).map(r => ({ uid: r.payEventUID!, period: r.period, amountCents: r.amountCents, status: r.status }));
+        const items = employerRequestItems(ledger);
         if (!items.length) { push({ kind: "info", title: t("ap_nothing_title"), body: t("ap_nothing_text") }); return; }
         const req = encodeEmployerRequest({ worker: L.address, workerName: ledger.profile.name, employerLabel: ledger.profile.employerLabel, items });
         setAskUrl(`${window.location.origin}/employer?c=${req}`);

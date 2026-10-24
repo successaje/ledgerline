@@ -11,7 +11,7 @@ import { Stages } from "@/components/ui/Stages";
 import { decodeEmployerRequest, type EmployerRequest } from "@/domain/bundle";
 import { DECISION, PAY_STATUS, type TxStage } from "@/domain/types";
 import { periodLabel, sgd, shortAddr } from "@/domain/format";
-import { SCHEMA_DEFS, explorer } from "@/services/chain";
+import { CHAIN_NAME, SCHEMA_DEFS, explorer } from "@/services/chain";
 import { getOrCreateKey } from "@/services/keys";
 import { useConfig } from "@/hooks/useConfig";
 import { useToast } from "@/hooks/useToast";
@@ -19,6 +19,14 @@ import { logEvent } from "@/services/analytics";
 
 type Done = Record<string, { uid: string; decision: number; period?: number; amountCents?: number; workerName?: string; at?: number }>;
 
+const payLabel = (status: number) => (status === PAY_STATUS.UNPAID ? "Not paid" : status === PAY_STATUS.PARTIAL ? "Partly paid" : "Paid in full");
+const dateOf = (ms: number) => new Date(ms).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric" });
+
+/**
+ * The employer's page. One response per month: Acknowledge (agree with the worker's statement) or Disagree.
+ * The response is signed by a key on this phone and recorded next to the worker's month. It is not a payslip
+ * and it does not verify the employer's identity.
+ */
 function EmployerInner() {
   const sp = useSearchParams();
   const { config, ready } = useConfig();
@@ -26,6 +34,7 @@ function EmployerInner() {
   const [req, setReq] = useState<EmployerRequest | null | "bad">(null);
   const [done, setDone] = useState<Done>({});
   const [active, setActive] = useState<{ uid: string; stage: TxStage; txHash?: string } | null>(null);
+  const [confirming, setConfirming] = useState<{ uid: string; decision: 1 | 2 } | null>(null);
   const [addr, setAddr] = useState("");
 
   useEffect(() => {
@@ -37,6 +46,7 @@ function EmployerInner() {
 
   async function decide(uid: string, decision: 1 | 2) {
     if (!config || req === null || req === "bad") return;
+    setConfirming(null);
     try {
       const { delegatedAttest } = await import("@/services/attest");
       const res = await delegatedAttest({
@@ -52,8 +62,8 @@ function EmployerInner() {
       const n = { ...done, [uid]: { uid: res.uid, decision, period: item?.period, amountCents: item?.amountCents, workerName: req.workerName, at: Date.now() } };
       setDone(n); try { localStorage.setItem("ll.employer.done", JSON.stringify(n)); } catch {}
       setTimeout(() => setActive(a => (a?.uid === uid ? null : a)), 1200);
-      logEvent("employer_answered", { decision: decision === 1 ? "confirm" : "dispute" });
-      push({ kind: "success", title: decision === 1 ? "Confirmed" : "Disputed", body: "Your answer is signed and recorded." });
+      logEvent("employer_answered", { decision: decision === 1 ? "acknowledge" : "disagree" });
+      push({ kind: "success", title: decision === 1 ? "Acknowledged" : "Disagreement recorded", body: "Your response is signed and recorded on the test network." });
     } catch (e) {
       setActive(null);
       const ue = e as { title: string; hint: string };
@@ -61,22 +71,24 @@ function EmployerInner() {
     }
   }
 
-  if (req === null) return <Shell><div className="skeleton" style={{ height: 240, borderRadius: 14 }} /></Shell>;
+  const nav = <span className="env-label" title={`Responses are written to ${CHAIN_NAME}, a test network.`}>Test network<span className="hide-xs"> · {CHAIN_NAME}</span></span>;
+  if (req === null) return <Shell nav={nav}><div className="skeleton" style={{ height: 240, borderRadius: 16 }} /></Shell>;
+
   if (req === "bad") {
     const answered = Object.values(done).filter(d => d.period).sort((a, b) => (b.at || 0) - (a.at || 0));
     return (
-      <Shell nav={<Pill tone="outline">Employer</Pill>}>
-        <div style={{ maxWidth: 560, margin: "0 auto", display: "grid", gap: 16 }}>
-          <div><h1>Employer confirmations</h1><p className="muted" style={{ marginTop: 8 }}>Workers send you a link for each month they record. You confirm or dispute it here; your answer is signed by a key on this phone and becomes part of their record, and your evidence that you paid.</p></div>
+      <Shell nav={nav}>
+        <div className="stack" style={{ maxWidth: 560, margin: "0 auto" }}>
+          <div><h1>Employer responses</h1><p className="muted" style={{ marginTop: 8 }}>Workers send you a link for each month they record. You acknowledge or disagree here. Your response is signed by a key on this phone and recorded next to their month.</p></div>
           {answered.length === 0 ? (
-            <div className="empty"><h3>No requests on this phone yet</h3><p>Open the link the worker sent you on WhatsApp. There is nothing to install.</p></div>
+            <div className="card"><div className="empty"><h3>No requests on this phone yet</h3><p>Open the link the worker sent you. There is nothing to install.</p></div></div>
           ) : (
-            <div className="ledger">
-              <div className="ledger-head"><strong>Answered from this phone</strong><Pill tone="outline">{answered.length}</Pill></div>
+            <div className="card">
+              <div className="page-head" style={{ marginBottom: 4 }}><strong>Responded from this phone</strong><Pill tone="neutral">{answered.length}</Pill></div>
               {answered.map(d => (
-                <div key={d.uid} className="row" style={{ cursor: "default" }}>
-                  <div><div className="row-title">{d.period ? periodLabel(d.period) : "Month"}</div><div className="row-sub"><span>{d.workerName}</span>{d.amountCents ? <span className="num">{sgd(d.amountCents)}</span> : null}{d.at ? <span className="faint">{new Date(d.at).toLocaleDateString("en-SG")}</span> : null}</div></div>
-                  <div className="row-right"><Pill tone={d.decision === 1 ? "ok" : "bad"}>{d.decision === 1 ? "Confirmed" : "Disputed"}</Pill><a className="btn btn-ghost btn-sm" href={explorer.attestation(d.uid)} target="_blank" rel="noreferrer" aria-label="View on chain"><Icon name="link" size={14} /></a></div>
+                <div key={d.uid} className="mrow">
+                  <div><div className="mrow-title">{d.period ? periodLabel(d.period, true) : "Month"}</div><div className="mrow-sub"><span>{d.workerName}</span>{d.amountCents ? <span>{sgd(d.amountCents)}</span> : null}{d.at ? <span>{dateOf(d.at)}</span> : null}</div></div>
+                  <div className="mrow-state"><Pill tone={d.decision === 1 ? "ok" : "bad"}>{d.decision === 1 ? "Acknowledged" : "Disagreed"}</Pill><a className="btn btn-ghost btn-sm" href={explorer.attestation(d.uid)} target="_blank" rel="noreferrer" aria-label="View on the test network"><Icon name="link" size={14} /></a></div>
                 </div>
               ))}
             </div>
@@ -89,56 +101,69 @@ function EmployerInner() {
 
   const pending = req.items.filter(i => !done[i.uid]);
   return (
-    <Shell nav={<Pill tone="outline">Employer confirmation</Pill>}>
-      <div style={{ maxWidth: 560, margin: "0 auto", display: "grid", gap: 16 }}>
+    <Shell nav={nav}>
+      <div className="stack" style={{ maxWidth: 560, margin: "0 auto" }}>
         <div>
-          <h1>{req.workerName} asks you to confirm {req.items.length === 1 ? "a salary record" : `${req.items.length} salary records`}</h1>
-          <p className="muted" style={{ marginTop: 8 }}>Each answer is signed from this phone and stored next to the month. Both of you can rely on it later. No app or account is needed.</p>
+          <h1>{req.workerName} recorded {req.items.length === 1 ? "a month of pay" : `${req.items.length} months of pay`} and asks for your response</h1>
+          <p className="muted" style={{ marginTop: 8 }}>For each month, you can acknowledge the statement or disagree with it. Your response is signed from this phone and recorded next to the month on {CHAIN_NAME}, a public test network. It is not a payslip, it does not move money, and it does not verify who you are.</p>
         </div>
-        {!ready && <Notice kind="warn" title="Recording is not available right now">Your answers cannot be saved on this server yet.</Notice>}
-        <div className="ledger">
+        {config && !ready && <Notice kind="warn" title="Responding is not available right now">Your responses cannot be recorded on this server yet.</Notice>}
+        <div className="stack">
           {req.items.map(it => {
             const d = done[it.uid];
             const a = active?.uid === it.uid ? active : null;
+            const c = confirming?.uid === it.uid ? confirming : null;
+            const overdue = it.respondBy ? Date.now() > it.respondBy : false;
             return (
-              <div key={it.uid}>
-                <div className="row" style={{ cursor: "default" }}>
-                  <div>
-                    <div className="row-title">{periodLabel(it.period)}</div>
-                    <div className="row-sub"><span className="num">{sgd(it.amountCents)}</span><span>· worker recorded: {it.status === PAY_STATUS.UNPAID ? "Not paid" : it.status === PAY_STATUS.PARTIAL ? "Partly paid" : "Paid"}</span></div>
-                  </div>
-                  <div className="row-right">
-                    {d ? <Pill tone={d.decision === 1 ? "ok" : "bad"}><Icon name={d.decision === 1 ? "check" : "x"} size={12} />{d.decision === 1 ? "Confirmed" : "Disputed"}</Pill> : <Pill tone="warn" dot>Awaiting you</Pill>}
-                  </div>
+              <section className="card stack-sm" key={it.uid} aria-labelledby={`m-${it.uid}`}>
+                <div className="page-head" style={{ marginBottom: 0 }}>
+                  <h2 id={`m-${it.uid}`}>{periodLabel(it.period, true)}</h2>
+                  {d ? <Pill tone={d.decision === 1 ? "ok" : "bad"}><Icon name={d.decision === 1 ? "check" : "x"} size={14} />{d.decision === 1 ? "Acknowledged" : "Disagreed"}</Pill> : <Pill tone={overdue ? "bad" : "warn"}><Icon name="clock" size={14} />{overdue ? "Response window passed" : "Awaiting your response"}</Pill>}
                 </div>
-                <div className="row-detail" style={{ borderBottom: "1px solid var(--line)" }}>
-                  {a ? <Stages stage={a.stage} txHash={a.txHash} labels={{ preparing: "Preparing your answer (reading the chain, up to 15 s)", signing: "Signing on this phone", done: "Answer recorded" }} /> : d ? (
-                    <div className="small"><a href={explorer.attestation(d.uid)} target="_blank" rel="noreferrer">Your signed answer <Icon name="link" size={12} /></a></div>
-                  ) : (
-                    <div className="actions" style={{ marginTop: 0 }}>
-                      <Button variant="accent" disabled={!ready || !!active} onClick={() => decide(it.uid, DECISION.CONFIRM)} icon={<Icon name="check" />}>Confirm</Button>
-                      <Button variant="danger" disabled={!ready || !!active} onClick={() => decide(it.uid, DECISION.DISPUTE)} icon={<Icon name="x" />}>Dispute</Button>
+                <div className="review">
+                  <div className="review-row"><span className="k">Worker recorded</span><span className="v">{payLabel(it.status)}</span></div>
+                  {typeof it.expectedCents === "number" && <div className="review-row"><span className="k">Expected</span><span className="v">{sgd(it.expectedCents)}</span></div>}
+                  <div className="review-row"><span className="k">Recorded received</span><span className="v">{sgd(it.status === PAY_STATUS.UNPAID ? 0 : it.amountCents)}</span></div>
+                  {it.respondBy && !d && <div className="review-row"><span className="k">Response requested by</span><span className="v">{dateOf(it.respondBy)}</span></div>}
+                </div>
+                {a ? <Stages stage={a.stage} txHash={a.txHash} labels={{ preparing: "Preparing your response (reading the test network, up to 15 s)", signing: "Signing on this phone", done: "Response recorded" }} /> : d ? (
+                  <p className="small"><a href={explorer.attestation(d.uid)} target="_blank" rel="noreferrer">Your signed response on the test network <Icon name="link" size={12} /></a></p>
+                ) : c ? (
+                  <div className="stack-sm">
+                    <Notice kind={c.decision === 1 ? "info" : "warn"} title={c.decision === 1 ? `Acknowledge ${periodLabel(it.period)}?` : `Disagree with ${periodLabel(it.period)}?`}>
+                      {c.decision === 1
+                        ? `You agree that the worker recorded this month correctly: ${payLabel(it.status).toLowerCase()}, ${sgd(it.status === PAY_STATUS.UNPAID ? 0 : it.amountCents)} received. This will be signed from this phone and published to ${CHAIN_NAME}. It cannot be deleted.`
+                        : `You disagree with the worker's statement for this month. This will be signed from this phone and published to ${CHAIN_NAME}. It cannot be deleted. It does not say what you think happened; talk to the worker about that.`}
+                    </Notice>
+                    <div className="btn-row">
+                      <Button variant={c.decision === 1 ? "primary" : "danger"} disabled={!ready || !!active} onClick={() => decide(it.uid, c.decision)} icon={<Icon name={c.decision === 1 ? "check" : "x"} />}>{c.decision === 1 ? "Yes, acknowledge" : "Yes, disagree"}</Button>
+                      <Button variant="ghost" onClick={() => setConfirming(null)}>Back</Button>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                ) : (
+                  <div className="btn-row">
+                    <Button variant="primary" disabled={!ready || !!active} onClick={() => setConfirming({ uid: it.uid, decision: DECISION.CONFIRM })} icon={<Icon name="check" />}>Acknowledge</Button>
+                    <Button variant="danger" disabled={!ready || !!active} onClick={() => setConfirming({ uid: it.uid, decision: DECISION.DISPUTE })} icon={<Icon name="x" />}>Disagree</Button>
+                  </div>
+                )}
+              </section>
             );
           })}
         </div>
-        {pending.length === 0 && <Notice kind="ok" title="All done">Every month in this request has your answer. You can close this page.</Notice>}
-        {pending.length === 0 && (
-          <div className="panel panel-pad" style={{ display: "grid", gap: 8 }}>
-            <strong>Your answers are now part of {req.workerName}'s record</strong>
-            <p className="small muted">Each one is signed by the key on this phone and can be verified by anyone, which also protects you: a confirmed month is evidence that you paid. Employers, agencies and workers all use the same free tool.</p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><a className="btn" href="/help">How this works</a><a className="btn btn-ghost" href="/">About Ledgerline</a></div>
+        {pending.length === 0 && <Notice kind="ok" title="All done">Every month in this request has your response. You can close this page.</Notice>}
+        <details className="acc">
+          <summary>What acknowledging means</summary>
+          <div className="acc-body stack-sm small muted">
+            <p>Acknowledging means you agree with what the worker recorded for that month. Disagreeing means you do not. Either way, your response is signed by a key on this phone and stored next to the worker's record where anyone with the worker's shared link can see it.</p>
+            <p>A response is not a payslip, not a contract, and not a verification of your identity. It is a record that this phone responded. If you do not respond by the requested date, the worker's record shows "no response by the deadline". That is not a finding of wrongdoing.</p>
+            <p>Signing key on this phone: <span className="mono">{shortAddr(addr, 8)}</span>. Test network only; no money moves.</p>
           </div>
-        )}
-        <p className="xs faint">Signing key on this phone: <span className="mono">{shortAddr(addr, 8)}</span>. Test network; no money moves.</p>
+        </details>
       </div>
     </Shell>
   );
 }
 
 export default function EmployerPage() {
-  return <Suspense fallback={<Shell><div className="skeleton" style={{ height: 240, borderRadius: 14 }} /></Shell>}><EmployerInner /></Suspense>;
+  return <Suspense fallback={<Shell><div className="skeleton" style={{ height: 240, borderRadius: 16 }} /></Shell>}><EmployerInner /></Suspense>;
 }

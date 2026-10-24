@@ -14,7 +14,7 @@ export default function Landing() {
       <div className="container site" style={{ padding: 0 }}>
         <section className="hero grid-2">
           <div>
-            <span className="env-label" title={t("nv_env_title", { chain: CHAIN_NAME })}>{t("nv_env")} · {CHAIN_NAME}</span>
+            <span className="env-label" title={t("nv_env_title", { chain: CHAIN_NAME })}>{t("nv_env")}<span className="hide-xs"> · {CHAIN_NAME}</span></span>
             <h1 style={{ marginTop: 14 }}>{t("ld_title")}</h1>
             <p className="lede">{t("ld_lede")}</p>
             <div className="cta">

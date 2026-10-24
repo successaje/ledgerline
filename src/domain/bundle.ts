@@ -3,8 +3,11 @@ import type { PayStatus, Period } from "./types";
 /** A dispute bundle is what the worker chooses to disclose. It is self-contained and re-verifiable from chain. */
 export type BundleItem = {
   period: Period;
+  /** Amount recorded as received, as written on chain. */
   amountCents: number;
   status: PayStatus;
+  /** Expected pay the worker chose to disclose. Not on chain; shown for context only. */
+  expectedCents?: number;
   payEventUID: string;
   countersignUID?: string;
   proof?: { uid: string; proofJson: string };
@@ -43,7 +46,7 @@ export type EmployerRequest = {
   worker: string;
   workerName: string;
   employerLabel: string;
-  items: { uid: string; period: Period; amountCents: number; status: PayStatus }[];
+  items: { uid: string; period: Period; amountCents: number; status: PayStatus; expectedCents?: number; respondBy?: number }[];
 };
 export function encodeEmployerRequest(r: EmployerRequest) { return encodeBase64Url(JSON.stringify(r)); }
 export function decodeEmployerRequest(s: string): EmployerRequest { return JSON.parse(decodeBase64Url(s)) as EmployerRequest; }

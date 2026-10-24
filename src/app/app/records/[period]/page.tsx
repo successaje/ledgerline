@@ -11,7 +11,7 @@ import { Stages } from "@/components/ui/Stages";
 import { ShareSheet } from "@/components/ledger/ShareSheet";
 import { PAY_STATUS, PROOF_METHOD, submissionOf } from "@/domain/types";
 import { dateLabel, sgd, shortAddr } from "@/domain/format";
-import { amounts, employerView } from "@/domain/paybook";
+import { amounts, employerView, employerRequestItems } from "@/domain/paybook";
 import { encodeEmployerRequest } from "@/domain/bundle";
 import { CHAIN_NAME, SCHEMA_DEFS, explorer } from "@/services/chain";
 import { useToast } from "@/hooks/useToast";
@@ -53,7 +53,7 @@ export default function RecordDetailPage() {
       };
       const ask = () => {
         if (!r.payEventUID) return;
-        const req = encodeEmployerRequest({ worker: L.address, workerName: ledger.profile.name, employerLabel: ledger.profile.employerLabel, items: [{ uid: r.payEventUID, period: r.period, amountCents: r.amountCents, status: r.status }] });
+        const req = encodeEmployerRequest({ worker: L.address, workerName: ledger.profile.name, employerLabel: ledger.profile.employerLabel, items: employerRequestItems(ledger, [period]) });
         setAskUrl(`${window.location.origin}/employer?c=${req}`);
         logEvent("employer_link_created", { months: 1 });
       };

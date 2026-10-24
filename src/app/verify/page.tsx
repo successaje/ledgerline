@@ -27,7 +27,7 @@ function Verdict({ v }: { v: ItemVerdict }) {
     <div className="panel">
       <div className="ledger-head" style={{ borderRadius: "14px 14px 0 0" }}>
         <strong>{periodLabel(v.item.period)}</strong>
-        <Pill tone={tone} dot>Worker recorded: {v.paymentLabel} · {sgd(v.item.amountCents)}</Pill>
+        <span className={`pill pill-${tone} wrap`}><Icon name={tone === "ok" ? "check" : "alert"} size={14} />Worker recorded: {v.paymentLabel} · {sgd(v.item.status === PAY_STATUS.UNPAID ? 0 : v.item.amountCents)} received</span>
       </div>
       <div className="panel-pad">
         <div className="checklist">
@@ -84,17 +84,18 @@ function VerifyInner() {
   }, [bundle, config, runId]);
 
   if (bundle === null) return <Shell><div className="skeleton" style={{ height: 240, borderRadius: 14 }} /></Shell>;
-  if (bundle === "bad") return <Shell><div className="empty"><h3>No bundle in this link</h3><p>A dispute bundle link contains the months the worker chose to disclose. Ask them to share it again.</p></div></Shell>;
+  if (bundle === "bad") return <Shell nav={<span className="env-label">Test network<span className="hide-xs"> · {CHAIN_NAME}</span></span>}><div className="empty"><h3>No shared records in this link</h3><p>A shared-records link contains only the months the worker chose to share. Ask them to share it again.</p></div></Shell>;
 
   const employerKeys = Array.from(new Set(verdicts.map(v => v.employerKey).filter(Boolean))) as string[];
   const allFound = verdicts.length === bundle.items.length && verdicts.every(v => v.found);
 
   return (
-    <Shell nav={<Pill tone="outline">Verifier · {CHAIN_NAME}</Pill>}>
+    <Shell nav={<span className="env-label" title={`Records are on ${CHAIN_NAME}, a test network.`}>Test network<span className="hide-xs"> · {CHAIN_NAME}</span></span>}>
       <div style={{ maxWidth: 640, margin: "0 auto", display: "grid", gap: 16 }}>
         <div>
-          <h1>Dispute bundle for {bundle.worker.name}</h1>
-          <p className="muted" style={{ marginTop: 6 }}>Employer “{bundle.employer.label}” · {bundle.items.length} month{bundle.items.length === 1 ? "" : "s"} disclosed · issued {new Date(bundle.issuedAt).toLocaleString("en-SG")}</p>
+          <h1>Pay records shared by {bundle.worker.name}</h1>
+          <p className="muted" style={{ marginTop: 6 }}>Employer “{bundle.employer.label}” · {bundle.items.length} month{bundle.items.length === 1 ? "" : "s"} shared · link made {new Date(bundle.issuedAt).toLocaleString("en-SG")}</p>
+          <p className="small muted" style={{ marginTop: 6 }}>This page re-checks each shared month against the public test network. It shows what the worker recorded, whether the employer responded, and whether demo bank evidence matched. It does not decide who is right.</p>
         </div>
         {state === "running" && <Notice kind="info"><span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><span className="spinner" /> Checking {verdicts.length + 1} of {bundle.items.length} against the chain…</span></Notice>}
         {state === "error" && <Notice kind="error" title="The record index could not be reached" action={<Button size="sm" onClick={() => setRunId(r => r + 1)} icon={<Icon name="refresh" size={14} />}>Try again</Button>}>Nothing in the bundle was changed. Retry in a moment.</Notice>}
@@ -119,9 +120,9 @@ function VerifyInner() {
         )}
         {state === "done" && (
           <div className="panel panel-pad no-print" style={{ display: "grid", gap: 8 }}>
-            <strong>Keep your own pay record</strong>
-            <p className="small muted">Ledgerline is free. Record each payday on your phone, have your employer confirm from a link, and prove a missing month from your bank without showing your balance.</p>
-            <a className="btn btn-primary" href="/app" style={{ justifySelf: "start" }}>Start my record</a>
+            <strong>Keep your own pay records</strong>
+            <p className="small muted">Ledgerline is free. Each month, record what you expected and what you received. Your employer can respond from a link. Share only the months you choose.</p>
+            <a className="btn btn-primary" href="/app/start" style={{ justifySelf: "start" }}>Start my records</a>
           </div>
         )}
       </div>

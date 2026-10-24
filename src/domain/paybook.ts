@@ -67,3 +67,10 @@ export function attention(ledger: Ledger, fastForward = false, now = Date.now())
 
 export function isShort(r: PayRecord) { return r.status !== PAY_STATUS.PAID; }
 export function ageDays(r: PayRecord) { return r.signedAt ? daysSince(r.signedAt) : 0; }
+
+/** Items for an employer request: months on chain without a response, with the response deadline the worker set. */
+export function employerRequestItems(ledger: Ledger, periods?: Period[]) {
+  return ledger.records
+    .filter(r => r.payEventUID && !r.countersign && (!periods || periods.includes(r.period)))
+    .map(r => ({ uid: r.payEventUID!, period: r.period, amountCents: r.amountCents, status: r.status, expectedCents: expectedOf(r, ledger.profile.salaryCents), respondBy: r.signedAt ? r.signedAt + ledger.profile.confirmWindowDays * 86400000 : undefined }));
+}
