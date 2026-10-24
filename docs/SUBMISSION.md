@@ -10,7 +10,7 @@
 
 **Submitted:** Tech Track build https://dorahacks.io/build/50263 (24 Oct 2026). Idea Track companion "Due Process" https://dorahacks.io/build/50257 (24 Oct 2026). Both under organizer review.
 
-**Demo video (2 min, captioned screen recording of the live site, no voiceover):** https://ledgerline-sg.vercel.app/demo/ledgerline-demo.mp4 · recorded by `scripts/record-demo.mjs` against production, so it can be re-recorded after any change.
+**Demo video (2 min 13 s, screen recording of the live site with a visible cursor, no captions or voiceover):** https://ledgerline-sg.vercel.app/demo/ledgerline-demo-2.mp4 · recorded by `scripts/record-demo.mjs` against production and encoded with `scripts/encode-demo.sh`, so it can be re-recorded after any change.
 
 ## Vision (paste into the BUIDL form)
 

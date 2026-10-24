@@ -28,3 +28,10 @@
 - [x] Languages: Tagalog, Bahasa Indonesia (PR #12), Burmese and Bengali (PR #13) for the worker app; native review still wanted
 - [ ] Reminders on payday and when an employer answers (opt-in channel needed)
 - [ ] Real bank statement provider via zkTLS
+
+## 24 Oct 2026, evening: paybook redesign shipped
+
+- PR #16 `redesign/paybook`: Home / Records / Settings, four-stage record flow with payload preview and consent, submission state model, employer Acknowledge / Disagree, verifier outcome taxonomy, blueprint tokens, four new translations, e2e tests, screenshots and vitals. Report in `docs/REDESIGN_REPORT.md`.
+- PayEvent v2 schema registered on Base Sepolia (`0xb30a394d…bb30`) after the owner's go-ahead; the app writes v2 and reads v1.
+- PR #17: overflow fixes after probing every page at twelve widths.
+- PR #18: demo re-recorded on the redesigned product with a drawn cursor and no captions (`/demo/ledgerline-demo-2.mp4`); both DoraHacks builds point at it and the Tech Track description was rewritten for the new flow.
