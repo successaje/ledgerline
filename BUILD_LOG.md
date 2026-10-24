@@ -14,4 +14,6 @@
 - [x] Unit tests and CI (PR #2, #3)
 - [x] Key backup, restore and rebuild from chain (PR #4)
 - [x] Deployed to Vercel: https://ledgerline-sg.vercel.app
-- [ ] README complete; demo script; BUIDL text
+- [x] README complete; demo script; BUIDL text
+- [x] Brand kit, icons and Open Graph (PR #6)
+- [x] Submitted: Tech Track (build 50263) and Idea Track companion Due Process (build 50257)

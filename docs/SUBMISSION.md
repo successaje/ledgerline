@@ -8,6 +8,8 @@
 
 **Links:** Live app https://ledgerline-sg.vercel.app · Repo https://github.com/successaje/ledgerline · Verifier https://ledgerline-sg.vercel.app/verify · Schemas in SCHEMAS.md
 
+**Submitted:** Tech Track build https://dorahacks.io/build/50263 (24 Oct 2026). Idea Track companion "Due Process" https://dorahacks.io/build/50257 (24 Oct 2026). Both under organizer review; presentation videos are invited 26–31 Oct.
+
 ## Vision (paste into the BUIDL form)
 
 Singapore has about 300,000 migrant domestic workers. They are excluded from the itemised-payslip requirement that protects other employees, 45.6% arrive already in debt to recruitment agents, and the Tripartite Alliance for Dispute Management logged 9,848 salary claims in 2024. When a salary does not arrive, the only evidence is the employer's word and the worker's screenshots. The same failure hits Gulf construction workers and the record 6,223 seafarers abandoned in 2025: the person who is harmed cannot prove what the more powerful party knows.
