@@ -79,10 +79,11 @@ export async function submitDelegatedAttestation(req: DelegatedAttestRequest): P
         attester: req.attester,
         deadline: BigInt(req.deadline),
       }), 25_000, "send");
-      // The SDK wraps the ContractTransactionResponse; hash is available before mining.
-      const hash = (tx as unknown as { data?: { hash?: string } }).data?.hash;
-      if (!hash) throw new Error("no tx hash from sdk");
-      return { txHash: hash };
+      // In eas-sdk 2.x the wrapper holds an unsent transaction request; `wait()` would send and block until mined.
+      // Send it ourselves so the client gets the hash immediately and can show real stages.
+      const request = (tx as unknown as { data: ethers.TransactionRequest }).data;
+      const response = await withTimeout(relayer.sendTransaction(request), 25_000, "send");
+      return { txHash: response.hash };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (/insufficient funds/i.test(msg)) throw new RelayerError("relayer-gas", msg);
