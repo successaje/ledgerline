@@ -16,6 +16,8 @@ export type Bundle = {
   employer: { label: string; id: string };
   bankAttestor: string;
   issuedAt: number;
+  /** The worker's configured employer-response window in days. Older bundles omit it; readers default to 3. */
+  responseWindowDays?: number;
   items: BundleItem[];
 };
 

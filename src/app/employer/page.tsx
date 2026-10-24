@@ -105,7 +105,7 @@ function EmployerInner() {
                 <div className="row" style={{ cursor: "default" }}>
                   <div>
                     <div className="row-title">{periodLabel(it.period)}</div>
-                    <div className="row-sub"><span className="num">{sgd(it.amountCents)}</span><span>· worker says {it.status === PAY_STATUS.UNPAID ? "not paid" : "paid"}</span></div>
+                    <div className="row-sub"><span className="num">{sgd(it.amountCents)}</span><span>· worker recorded: {it.status === PAY_STATUS.UNPAID ? "Not paid" : it.status === PAY_STATUS.PARTIAL ? "Partly paid" : "Paid"}</span></div>
                   </div>
                   <div className="row-right">
                     {d ? <Pill tone={d.decision === 1 ? "ok" : "bad"}><Icon name={d.decision === 1 ? "check" : "x"} size={12} />{d.decision === 1 ? "Confirmed" : "Disputed"}</Pill> : <Pill tone="warn" dot>Awaiting you</Pill>}

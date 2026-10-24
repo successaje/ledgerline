@@ -98,7 +98,7 @@ function AppInner() {
       period: r.period, amountCents: r.amountCents, status: r.status, payEventUID: r.payEventUID!, countersignUID: r.countersign?.uid,
       proof: r.proof?.proofJson ? { uid: r.proof.uid, proofJson: r.proof.proofJson } : undefined,
     }));
-    const b: Bundle = { v: 1, worker: { address: L.address, name: L.ledger.profile.name }, employer: { label: L.ledger.profile.employerLabel, id: L.ledger.profile.employerId }, bankAttestor: config.bankAttestor, issuedAt: Date.now(), items };
+    const b: Bundle = { v: 1, worker: { address: L.address, name: L.ledger.profile.name }, employer: { label: L.ledger.profile.employerLabel, id: L.ledger.profile.employerId }, bankAttestor: config.bankAttestor, issuedAt: Date.now(), responseWindowDays: L.ledger.profile.confirmWindowDays, items };
     setBundleUrl(`${window.location.origin}/verify?b=${encodeBundle(b)}`);
     logEvent("bundle_created", { months: items.length });
     setSheet("bundle");

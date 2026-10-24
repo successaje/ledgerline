@@ -26,7 +26,7 @@ export function BundleSheet({ open, onClose, ledger, onCreate }: Props) {
           {recorded.map(r => (
             <label key={r.period} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "center", padding: "10px 12px", border: "1px solid var(--line)", borderRadius: 10, cursor: "pointer", background: sel[r.period] ? "var(--paper-3)" : "var(--paper-2)" }}>
               <input type="checkbox" checked={!!sel[r.period]} onChange={e => setSel({ ...sel, [r.period]: e.target.checked })} />
-              <span><strong>{monthLabel(r.period)}</strong> <span className="small muted">· {sgd(r.amountCents)} · {r.status === PAY_STATUS.UNPAID ? t("bs_not_paid") : t("bs_paid")}</span></span>
+              <span><strong>{monthLabel(r.period)}</strong> <span className="small muted">· {sgd(r.amountCents)} · {r.status === PAY_STATUS.UNPAID ? t("bs_not_paid") : r.status === PAY_STATUS.PARTIAL ? t("ll_partly_paid") : t("bs_paid")}</span></span>
               <span className="xs faint">{[r.countersign && t("bs_employer"), r.proof && t("bs_bank_proof")].filter(Boolean).join(" · ")}</span>
             </label>
           ))}

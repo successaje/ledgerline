@@ -10,28 +10,39 @@ import { decodeBundle, type Bundle } from "@/domain/bundle";
 import { PAY_STATUS } from "@/domain/types";
 import { periodLabel, sgd, shortAddr } from "@/domain/format";
 import { explorer, CHAIN_NAME } from "@/services/chain";
-import { verifyItem, type ItemVerdict } from "@/services/verify";
+import { verifyItem, type ItemVerdict, type Check } from "@/services/verify";
 import { useConfig } from "@/hooks/useConfig";
 import { logEvent } from "@/services/analytics";
 
+const OUTCOME: Record<Check["outcome"], { word: string; cls: string; icon: "check" | "x" | "info" | "clock" }> = {
+  passed: { word: "Passed", cls: "ok", icon: "check" },
+  failed: { word: "Failed", cls: "bad", icon: "x" },
+  not_checked: { word: "Not checked", cls: "wait", icon: "info" },
+  unavailable: { word: "Unavailable", cls: "warn", icon: "clock" },
+};
+
 function Verdict({ v }: { v: ItemVerdict }) {
+  const tone = v.item.status === PAY_STATUS.UNPAID ? "bad" : v.item.status === PAY_STATUS.PARTIAL ? "warn" : "ok";
   return (
     <div className="panel">
       <div className="ledger-head" style={{ borderRadius: "14px 14px 0 0" }}>
         <strong>{periodLabel(v.item.period)}</strong>
-        <Pill tone={v.item.status === PAY_STATUS.UNPAID ? "bad" : "ok"} dot>{sgd(v.item.amountCents)} · {v.item.status === PAY_STATUS.UNPAID ? "reported not paid" : "reported paid"}</Pill>
+        <Pill tone={tone} dot>Worker recorded: {v.paymentLabel} · {sgd(v.item.amountCents)}</Pill>
       </div>
       <div className="panel-pad">
         <div className="checklist">
-          {v.checks.map((c, i) => (
-            <div className="check" key={i}>
-              <span className={`mark ${c.ok === null ? "wait" : c.ok ? "ok" : "bad"}`}>{c.ok === null ? null : <Icon name={c.ok ? "check" : "x"} size={11} />}</span>
-              <div>
-                <div className="label">{c.label}</div>
-                {c.detail && <div className="detail">{c.detail}{c.link && <> · <a href={c.link} target="_blank" rel="noreferrer">on chain</a></>}</div>}
+          {v.checks.map((c, i) => {
+            const o = OUTCOME[c.outcome];
+            return (
+              <div className="check" key={i}>
+                <span className={`mark ${o.cls}`} aria-hidden><Icon name={o.icon} size={11} /></span>
+                <div>
+                  <div className="label"><span className="check-outcome">{o.word}</span> · {c.label}</div>
+                  {c.detail && <div className="detail">{c.detail}{c.link && <> · <a href={c.link} target="_blank" rel="noreferrer">on chain</a></>}</div>}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div className="summary" style={{ marginTop: 12 }}>{v.sentence}</div>
       </div>
@@ -65,7 +76,7 @@ function VerifyInner() {
           if (cancelled) return;
           out.push(v); setVerdicts([...out]);
         }
-        setState("done"); logEvent("verify_done", { ok: out.every(v => v.checks.every(c => c.ok !== false)) });
+        setState("done"); logEvent("verify_done", { ok: out.every(v => v.checks.every(c => c.outcome !== "failed")) });
         if (out.some(v => !v.found) && runId < 4) setTimeout(() => setRunId(r => r + 1), 15_000);
       } catch { if (!cancelled) setState("error"); }
     })();
@@ -99,8 +110,9 @@ function VerifyInner() {
           <div className="panel panel-pad small muted" style={{ display: "grid", gap: 6 }}>
             <strong style={{ color: "var(--ink)" }}>What was checked</strong>
             <span>Each month is an attestation on {CHAIN_NAME} signed by the worker's key <span className="mono">{shortAddr(bundle.worker.address, 8)}</span>.</span>
-            <span>Employer answers are separate attestations that reference the month{employerKeys.length ? <>, signed by <span className="mono">{employerKeys.map(k => shortAddr(k)).join(", ")}</span></> : ""}.</span>
-            <span>Bank proofs are hashed on chain; this page recomputes the hash and checks the attestor signature{bundle.bankAttestor ? <> (<span className="mono">{shortAddr(bundle.bankAttestor)}</span>)</> : ""}.</span>
+            <span>Employer responses are separate attestations that reference the month{employerKeys.length ? <>, signed from the device that opened the link (<span className="mono">{employerKeys.map(k => shortAddr(k)).join(", ")}</span>)</> : ""}. A device key is not a verified employer identity.</span>
+            <span>Bank evidence is hashed on chain; this page recomputes the hash and checks the attestor signature{bundle.bankAttestor ? <> (<span className="mono">{shortAddr(bundle.bankAttestor)}</span>)</> : ""}. In this release the bank is demo data, not a real bank.</span>
+            <span>Outcomes: Passed, Failed, Not checked, Unavailable. A timeout is Unavailable, never Failed. A matching signature is not proof of payment.</span>
             <span>Months outside this bundle were not disclosed. No names or balances are on chain.</span>
             <span className="print-only">Verified at {new Date().toLocaleString("en-SG")} · ledgerline-sg.vercel.app/verify</span>
           </div>

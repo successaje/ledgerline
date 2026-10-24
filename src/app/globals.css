@@ -196,7 +196,8 @@ p { margin: 0; }
 .check { display: grid; grid-template-columns: 20px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); align-items: start; }
 .check:last-child { border-bottom: 0; }
 .check .mark { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; margin-top: 2px; color: #fff; }
-.check .mark.ok { background: var(--green); } .check .mark.bad { background: var(--red); } .check .mark.warn { background: var(--amber); } .check .mark.wait { background: var(--line-2); }
+.check .mark.ok { background: var(--green); } .check .mark.bad { background: var(--red); } .check .mark.warn { background: var(--amber); } .check .mark.wait { background: var(--ink-3); }
+.check-outcome { font-weight: 700; }
 .check .label { font-weight: 560; }
 .check .detail { font-size: var(--fs-sm); color: var(--ink-2); margin-top: 2px; }
 .summary { padding: 14px 16px; border-radius: var(--r-md); background: var(--ink); color: var(--paper); font-size: var(--fs-md); line-height: 1.5; }
