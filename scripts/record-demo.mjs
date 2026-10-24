@@ -1,4 +1,5 @@
-// Records the product demo on the live site with on-screen captions. Output: public/demo/ledgerline-demo.webm
+// Records the product demo on the live site with a visible cursor and no captions.
+// Output: public/demo/ledgerline-demo.webm (convert to mp4 with scripts/encode-demo.sh)
 // Usage: node scripts/record-demo.mjs [baseUrl]
 import { chromium } from "playwright";
 import fs from "node:fs";
@@ -13,119 +14,142 @@ const context = await browser.newContext({
   viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, locale: "en-SG",
   recordVideo: { dir: OUT_DIR, size: { width: 1280, height: 720 } },
 });
+// A drawn cursor that follows the mouse, since headless recordings have none. Injected on every page.
+await context.addInitScript(() => {
+  const draw = () => {
+    if (document.getElementById("__cur")) return;
+    const c = document.createElement("div"); c.id = "__cur";
+    c.innerHTML = `<svg width="26" height="30" viewBox="0 0 26 30"><path d="M3 2l18 13-8 1.5 4.5 9-3.5 1.6-4.5-9L3 24z" fill="#fff" stroke="#172C2A" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+    Object.assign(c.style, { position: "fixed", left: "0px", top: "0px", zIndex: "2147483647", pointerEvents: "none", transition: "transform 40ms linear", filter: "drop-shadow(0 1px 2px rgba(0,0,0,.35))", transform: "translate(-9999px,-9999px)" });
+    document.documentElement.appendChild(c);
+    window.__moveCursor = (x, y) => { c.style.transform = `translate(${x - 3}px, ${y - 2}px)`; };
+    window.__pressCursor = () => { c.style.scale = "0.85"; setTimeout(() => { c.style.scale = "1"; }, 140); };
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", draw); else draw();
+});
 const page = await context.newPage();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+let cur = { x: 640, y: 360 };
 
-async function caption(text, hold = 3200) {
-  await page.evaluate(t => {
-    let el = document.getElementById("__cap");
-    if (!el) {
-      el = document.createElement("div"); el.id = "__cap";
-      Object.assign(el.style, { position: "fixed", left: "50%", bottom: "28px", transform: "translateX(-50%)", maxWidth: "900px", padding: "14px 22px", borderRadius: "14px", background: "rgba(23,25,28,.92)", color: "#f7f5f0", font: "600 22px/1.35 -apple-system, Inter, Segoe UI, Helvetica, Arial, sans-serif", textAlign: "center", zIndex: "99999", boxShadow: "0 8px 24px rgba(0,0,0,.25)", transition: "opacity .25s" });
-      document.body.appendChild(el);
-    }
-    el.textContent = t; el.style.opacity = "1";
-  }, text);
+async function glide(x, y, ms = 650) {
+  const steps = Math.max(8, Math.round(ms / 16));
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps, e = 1 - Math.pow(1 - t, 3);
+    const nx = cur.x + (x - cur.x) * e, ny = cur.y + (y - cur.y) * e;
+    await page.mouse.move(nx, ny);
+    await page.evaluate(([a, b]) => window.__moveCursor?.(a, b), [nx, ny]).catch(() => {});
+    await sleep(ms / steps);
+  }
+  cur = { x, y };
+}
+async function showCursor() { await page.evaluate(([a, b]) => window.__moveCursor?.(a, b), [cur.x, cur.y]).catch(() => {}); }
+async function clickOn(locator, hold = 900) {
+  await locator.first().scrollIntoViewIfNeeded();
+  await sleep(200);
+  const box = await locator.first().boundingBox();
+  if (!box) throw new Error("no box for " + locator);
+  await glide(box.x + Math.min(box.width / 2, 120), box.y + box.height / 2);
+  await sleep(180);
+  await page.evaluate(() => window.__pressCursor?.()).catch(() => {});
+  await locator.first().click();
   await sleep(hold);
 }
-async function clearCaption() { await page.evaluate(() => { const el = document.getElementById("__cap"); if (el) el.style.opacity = "0"; }); }
-async function click(name, opts = {}) { await page.getByRole("button", { name, ...opts }).first().click(); }
+async function typeInto(locator, text) {
+  await clickOn(locator, 200);
+  await locator.first().fill("");
+  await page.keyboard.type(text, { delay: 55 });
+  await sleep(500);
+}
+async function goto(url, hold = 1800) {
+  await page.goto(BASE + url, { waitUntil: "networkidle" });
+  await showCursor();
+  await sleep(hold);
+}
+async function scrollBy(px, ms = 700) {
+  await page.mouse.wheel(0, px);
+  await sleep(ms);
+}
+const btn = name => page.getByRole("button", { name, exact: true });
+const link = name => page.getByRole("link", { name, exact: true });
 
 try {
-  // 1. Landing
-  await page.goto(BASE + "/", { waitUntil: "networkidle" });
-  await caption("Singapore's 300,000 domestic workers are excluded from the itemised-payslip rule. When pay goes missing, there is no evidence.", 4200);
-  await caption("Ledgerline: the payslip the employer cannot take back.", 2600);
+  // 1. Landing: what it is, then try the sample
+  await goto("/", 2600);
+  await scrollBy(420, 1400);
+  await scrollBy(-420, 900);
+  await clickOn(link("Try a sample"), 2600);
+  await page.waitForURL("**/app");
+  await showCursor();
+  await sleep(1200);
+  await scrollBy(380, 1500);
+  await scrollBy(-380, 700);
 
-  // 2. Sample record
-  await page.goto(BASE + "/app?sample=1", { waitUntil: "networkidle" });
-  await page.waitForSelector("#month-202607", { timeout: 20000 });
-  await caption("A sample record: Maria, nine months at S$600. July is missing. Every month she signs is written to Base; she never sees a wallet.", 4200);
-
-  // 3. Record July (unpaid) with real stages
-  await page.locator("#month-202607 .row").click();
-  await caption("She records July as not paid. The record is signed by a key on her phone; a relayer pays the fee.", 2400);
-  await page.locator("#month-202607").getByRole("button", { name: "Sign and record" }).click();
-  await page.locator("#month-202607 .pill-ok").waitFor({ timeout: 90000 });
-  await caption("Recorded on chain. The month is now hers: no employer or agency can rewrite it.", 2800);
-
-  // 4. Record September (paid) so the employer has something to confirm
-  await page.locator("#month-202609 .row").click();
-  await page.locator("#month-202609").getByRole("button", { name: "Sign and record" }).click();
-  await page.locator("#month-202609 .pill-ok").waitFor({ timeout: 90000 });
-
-  // 5. Ask employer
-  await click("Ask employer to confirm");
-  await page.getByText("Open as the employer").waitFor({ timeout: 10000 });
-  await caption("She sends her employer a WhatsApp link. No app, no account: one tap per month.", 3600);
-  const empHref = await page.getByRole("link", { name: "Open as the employer" }).getAttribute("href");
-  await page.keyboard.press("Escape");
-
-  // 6. Employer confirms September, leaves July unanswered
-  await page.goto(empHref, { waitUntil: "networkidle" });
-  await caption("The employer's view. They confirm September and say nothing about July.", 3200);
-  const sepRow = page.locator(".ledger > div", { hasText: "Sep 2026" });
-  await sepRow.getByRole("button", { name: "Confirm" }).click();
-  await sepRow.getByText("Confirmed").waitFor({ timeout: 90000 });
-  await caption("Their answer is signed from their own phone and recorded next to her month.", 2800);
-
-  // 7. Back to the worker: confirmations arrive, July silent
-  await page.goto(BASE + "/app", { waitUntil: "networkidle" });
-  await page.waitForSelector("#month-202607", { timeout: 20000 });
-  // The public indexer lags the chain by a few seconds; poll until September shows the employer's answer.
-  for (let i = 0; i < 12; i++) {
-    if (await page.locator("#month-202609", { hasText: "employer confirmed" }).count()) break;
-    await sleep(6000);
-    await click("Check for confirmations");
-    await sleep(2500);
-  }
-  await click("Settings");
-  await page.getByLabel("Demo: treat the employer window as elapsed").check();
-  await page.keyboard.press("Escape");
+  // 2. Record November as partly paid: Month → Payment → Supporting information → Review → Publish
+  await clickOn(page.getByRole("link", { name: /^Record / }), 1600);
+  await clickOn(btn("Continue"), 1200);
+  await clickOn(page.getByText("Partly paid", { exact: true }), 900);
+  await typeInto(page.getByLabel("Amount received"), "500");
+  await clickOn(btn("Continue"), 1000);
+  await typeInto(page.getByLabel("Note"), "Paid on the 12th. S$200 held back, no reason given.");
+  await clickOn(btn("Continue"), 1600);
+  await scrollBy(520, 1600);
+  await clickOn(page.getByRole("checkbox"), 900);
+  await clickOn(btn("Publish test record"), 1200);
+  await page.getByRole("heading", { name: /recorded$/ }).waitFor({ timeout: 180000 });
+  await showCursor();
+  await sleep(2200);
+  await clickOn(link("View record"), 2200);
+  await page.waitForURL("**/app/records/*");
+  await showCursor();
   await sleep(600);
-  await caption("September: employer confirmed. July: the employer did not answer within three days. Silence is recorded as evidence.", 4200);
 
-  // 8. Bank proof for July
-  await page.locator("#month-202607 .row").click().catch(() => {});
-  if (!(await page.locator("#month-202607 .row-detail").count())) await page.locator("#month-202607 .row").click();
-  await caption("Now the proof. She proves from her own bank statement that no salary-sized credit arrived in the pay window.", 3200);
-  await page.locator("#month-202607").getByRole("button", { name: "Prove from my bank" }).click();
-  await page.locator("#month-202607 .proof-body").waitFor({ timeout: 90000 });
-  await caption("\"No credit of S$600 or more from the employer between 1 and 10 July.\" Her balance never appears.", 4200);
-
-  // 9. Bundle and verifier
-  await click("Build dispute bundle");
-  await page.getByRole("button", { name: /Create bundle/ }).click();
-  await page.getByText("Open the verifier").waitFor({ timeout: 10000 });
-  await caption("She chooses what to disclose: only July. The bundle is a link and a QR.", 3000);
-  const verHref = await page.getByRole("link", { name: "Open the verifier" }).getAttribute("href");
+  // 3. Ask the employer, open the link as the employer, acknowledge
+  await clickOn(btn("Ask employer to respond"), 1800);
+  const employerUrl = await page.getByRole("link", { name: "Open as the employer" }).getAttribute("href");
   await page.keyboard.press("Escape");
-  await page.goto(verHref, { waitUntil: "networkidle" });
-  // Wait until every check has resolved (the page re-checks on its own while the index catches up).
-  for (let i = 0; i < 12; i++) {
-    await page.locator(".summary").first().waitFor({ timeout: 90000 });
-    const pending = await page.locator(".check .mark.wait").count();
-    const warn = await page.getByText("not indexed yet").count();
-    if (!pending && !warn) break;
+  await sleep(500);
+  await page.goto(employerUrl, { waitUntil: "networkidle" });
+  await showCursor();
+  await sleep(2400);
+  await clickOn(btn("Acknowledge"), 1800);
+  await clickOn(btn("Yes, acknowledge"), 1000);
+  await page.getByText("Your signed response on the test network").waitFor({ timeout: 180000 });
+  await showCursor();
+  await sleep(2400);
+
+  // 4. Back as the worker: the response arrives, then share the month
+  await goto("/app/records", 1600);
+  const period = (await page.evaluate(() => { const l = JSON.parse(localStorage.getItem("ll.ledger.v1")); return Math.max(...l.records.filter(r => r.payEventUID).map(r => r.period)); }));
+  for (let i = 0; i < 8; i++) {
+    await page.goto(BASE + `/app/records/${period}`, { waitUntil: "networkidle" });
+    if (await page.getByText("Employer acknowledged").isVisible().catch(() => false)) break;
     await sleep(8000);
   }
-  await caption("A mediator opens the verifier. It re-checks every signature and proof against the chain and writes one sentence.", 4600);
-  await caption("Anyone can verify this. Nobody has to trust Ledgerline.", 2800);
+  await showCursor();
+  await sleep(1400);
+  await scrollBy(340, 2600);
+  await scrollBy(-340, 700);
+  await clickOn(link("Share"), 1800);
+  await page.waitForURL("**/app/share*");
+  await showCursor();
+  await sleep(800);
+  await clickOn(btn("Create bundle for 1 month"), 1800);
+  const verifyUrl = await page.getByRole("link", { name: "Open the verifier" }).getAttribute("href");
+  await page.keyboard.press("Escape");
+  await sleep(400);
 
-  // 10. Languages and recovery
-  await page.goto(BASE + "/app", { waitUntil: "networkidle" });
-  await page.waitForSelector(".lang-select", { timeout: 20000 });
-  await page.selectOption(".lang-select", "tl");
-  await caption("In Tagalog, Bahasa Indonesia, Burmese and Bengali. Recovery words restore the record on a new phone.", 4200);
-  await page.selectOption(".lang-select", "en");
+  // 5. The verifier, as a mediator would see it
+  await page.goto(verifyUrl, { waitUntil: "networkidle" });
+  await showCursor();
+  await page.getByText("What was checked").waitFor({ timeout: 120000 });
+  await sleep(1200);
+  await scrollBy(300, 2600);
+  await scrollBy(300, 2200);
 
-  // 11. Close
-  await page.goto(BASE + "/", { waitUntil: "networkidle" });
-  await caption("ledgerline-sg.vercel.app · github.com/successaje/ledgerline · Base Sepolia, testnet only", 4200);
-  await clearCaption();
+  // 6. Close on the landing page
+  await goto("/", 2600);
 } catch (e) {
   console.error("demo failed:", e);
-  await caption("Recording stopped: " + (e?.message || e), 2000).catch(() => {});
 }
 
 const video = page.video();
