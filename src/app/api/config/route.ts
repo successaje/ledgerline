@@ -11,6 +11,7 @@ export async function GET() {
     eas: EAS_ADDRESS,
     schemas: {
       payEvent: process.env.NEXT_PUBLIC_SCHEMA_PAYEVENT || "",
+      payEventV2: process.env.NEXT_PUBLIC_SCHEMA_PAYEVENT_V2 || undefined,
       countersign: process.env.NEXT_PUBLIC_SCHEMA_COUNTERSIGN || "",
       bankProof: process.env.NEXT_PUBLIC_SCHEMA_BANKPROOF || "",
     },

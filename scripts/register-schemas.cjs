@@ -1,4 +1,4 @@
-// Registers the three Ledgerline schemas on Base Sepolia (idempotent) and writes schemas.env.
+// Registers the Ledgerline schemas (v1 PayEvent, v2 PayEvent with expected / received / supersedes, Countersign, BankProof) on Base Sepolia (idempotent) and writes schemas.env.
 // Usage: node --env-file=.env.local scripts/register-schemas.cjs
 const { SchemaRegistry } = require("@ethereum-attestation-service/eas-sdk");
 
@@ -12,6 +12,7 @@ if (!PK) { console.error("RELAYER_PRIVATE_KEY missing"); process.exit(1); }
 
 const SCHEMAS = {
   PAYEVENT: "bytes32 workerId,bytes32 employerId,uint32 period,uint256 amountCents,uint8 status,bytes32 detailHash",
+  PAYEVENT_V2: "bytes32 workerId,bytes32 employerId,uint32 period,uint256 expectedCents,uint256 receivedCents,uint8 status,bytes32 detailHash,bytes32 supersedes",
   COUNTERSIGN: "bytes32 payEventUID,uint8 decision,bytes32 noteHash",
   BANKPROOF: "bytes32 payEventUID,bytes32 predicateHash,bytes32 proofHash,uint8 method,bool satisfied",
 };

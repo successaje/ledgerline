@@ -14,7 +14,7 @@ export const LANGS: { code: Lang; label: string }[] = [
   { code: "my", label: "မြန်မာ" },
   { code: "bn", label: "বাংলা" },
 ];
-const DICTS: Record<Lang, Dict> = { en, tl, id, my, bn };
+const DICTS: Record<Lang, Partial<Dict>> = { en, tl, id, my, bn };
 const KEY = "ll.lang";
 
 type Vars = Record<string, string | number>;
@@ -58,7 +58,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       const k = `${key}_${n === 1 ? "one" : "other"}` as keyof Dict;
       return fill(d[k] ?? en[k] ?? String(key), { n, ...(vars || {}) });
     };
-    const short = d.months_short.split(","), long = d.months_long.split(",");
+    const short = (d.months_short ?? en.months_short).split(","), long = (d.months_long ?? en.months_long).split(",");
     const monthLabel = (period: number, isLong = false) => `${(isLong ? long : short)[(period % 100) - 1]} ${Math.floor(period / 100)}`;
     return { lang, setLang, t, tn, monthLabel };
   }, [lang, setLang]);

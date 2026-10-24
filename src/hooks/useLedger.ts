@@ -1,9 +1,10 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Wallet } from "ethers";
-import type { AppConfig, Ledger, PayRecord, PayStatus, Profile, TxStage } from "@/domain/types";
+import type { AppConfig, Ledger, PayRecord, PayStatus, Profile, Submission, TxStage } from "@/domain/types";
 import { PAY_STATUS } from "@/domain/types";
 import { hashJson, hashText, idFromAddress, idFromLabel } from "@/domain/ids";
+import { ZeroHash } from "ethers";
 import { periodWindow, sgd } from "@/domain/format";
 import { deriveActivity, sinceLastVisit, type ActivityEvent } from "@/domain/activity";
 import { computeDue, type Due } from "@/domain/due";
@@ -72,7 +73,7 @@ export function useLedger(config: AppConfig | null, opts: { fastForward?: boolea
     else patchLedger(l => ({ ...l, meta: { ...l.meta, lastSeenAt: Date.now() } }));
   }, [config, ledger, sync, patchLedger]);
 
-  const start = useCallback((input: { name: string; employerLabel: string; salaryCents: number; startPeriod: number; endPeriod: number }) => {
+  const start = useCallback((input: { name: string; employerLabel: string; salaryCents: number; startPeriod?: number; endPeriod?: number; payDay?: number }) => {
     setLedger(newLedger(input));
   }, [setLedger]);
 
@@ -102,52 +103,101 @@ export function useLedger(config: AppConfig | null, opts: { fastForward?: boolea
     patchLedger(l => upsertRecord(l, period, { status, amountCents: amountCents ?? l.profile.salaryCents, note }));
   }, [patchLedger]);
 
-  const updateMonth = useCallback((period: number, p: { status?: PayStatus; amountCents?: number; note?: string }) => {
+  const updateMonth = useCallback((period: number, p: { status?: PayStatus; amountCents?: number; expectedCents?: number; note?: string; receivedOn?: string }) => {
     patch(period, p);
   }, [patch]);
 
+  const removeDraft = useCallback((period: number) => {
+    patchLedger(l => ({ ...l, records: l.records.filter(r => !(r.period === period && !r.payEventUID)) }));
+  }, [patchLedger]);
+
+  const markBackup = useCallback((kind: "verified" | "skipped") => {
+    patchLedger(l => ({ ...l, meta: { ...l.meta, ...(kind === "verified" ? { backupVerifiedAt: Date.now() } : { backupSkippedAt: Date.now() }) } }));
+  }, [patchLedger]);
+
   const dismiss = useCallback((key: string) => patchLedger(l => ({ ...l, meta: { ...l.meta, dismissed: { ...(l.meta.dismissed || {}), [key]: Date.now() } } })), [patchLedger]);
 
-  const record = useCallback(async (period: number, status?: PayStatus, amountCents?: number, note?: string) => {
+  type RecordInput = { status?: PayStatus; amountCents?: number; expectedCents?: number; note?: string; receivedOn?: string };
+
+  /**
+   * Signs and publishes one month. The record moves draft -> awaiting -> submitted -> confirmed, or to failed
+   * (nothing sent) or unknown (sent, result not learnt; checkSubmission resolves it). A month that already has an
+   * attestation is corrected: the new attestation supersedes the old one, which stays listed under "previous".
+   */
+  const record = useCallback(async (period: number, status?: PayStatus, amountCents?: number, note?: string, extra: Omit<RecordInput, "status" | "amountCents" | "note"> = {}) => {
     if (!config || !ledger || !walletRef.current) return;
     const w = walletRef.current;
     const existing = ledger.records.find(r => r.period === period);
     const st = status ?? existing?.status ?? PAY_STATUS.PAID;
-    const amount = amountCents ?? existing?.amountCents ?? ledger.profile.salaryCents;
+    const expected = extra.expectedCents ?? existing?.expectedCents ?? ledger.profile.salaryCents;
+    const amount = st === PAY_STATUS.UNPAID ? 0 : st === PAY_STATUS.PAID ? (amountCents ?? expected) : (amountCents ?? existing?.amountCents ?? 0);
     const nt = note ?? existing?.note;
+    const receivedOn = extra.receivedOn ?? existing?.receivedOn;
+    const supersedes = existing?.payEventUID;
+    const previous = supersedes && existing
+      ? [...(existing.previous || []), { uid: supersedes, txHash: existing.payEventTx, status: existing.status, amountCents: existing.amountCents, expectedCents: existing.expectedCents, signedAt: existing.signedAt }]
+      : existing?.previous;
     setLastError(null);
-    // A re-record supersedes: the previous employer answer and proof referenced the old attestation.
-    patch(period, { status: st, amountCents: amount, note: nt, countersign: undefined, proof: undefined });
+    const sub = (state: Submission["state"], more: Partial<Submission> = {}): Submission => ({ state, at: Date.now(), ...more });
+    // A correction supersedes: the previous employer answer and proof referenced the old attestation.
+    patch(period, { status: st, amountCents: amount, expectedCents: expected, note: nt, receivedOn, countersign: undefined, proof: undefined, submission: sub("awaiting"), previous });
+    let txHash: string | undefined;
     try {
-      const detailHash = hashJson({ worker: ledger.profile.name, employer: ledger.profile.employerLabel, note: nt || "" });
+      const detailHash = hashJson({ worker: ledger.profile.name, employer: ledger.profile.employerLabel, note: nt || "", expectedCents: expected, receivedOn: receivedOn || "", supersedes: supersedes || "" });
       const { delegatedAttest } = await attestModule();
+      const v2 = Boolean(config.schemas.payEventV2);
+      const common = [
+        { name: "workerId", value: idFromAddress(w.address), type: "bytes32" },
+        { name: "employerId", value: ledger.profile.employerId, type: "bytes32" },
+        { name: "period", value: period, type: "uint32" },
+      ];
       const res = await delegatedAttest({
-        schemaUID: config.schemas.payEvent, schemaString: SCHEMA_DEFS.payEvent, signer: w,
-        fields: [
-          { name: "workerId", value: idFromAddress(w.address), type: "bytes32" },
-          { name: "employerId", value: ledger.profile.employerId, type: "bytes32" },
-          { name: "period", value: period, type: "uint32" },
-          { name: "amountCents", value: BigInt(amount), type: "uint256" },
-          { name: "status", value: st, type: "uint8" },
-          { name: "detailHash", value: detailHash, type: "bytes32" },
-        ],
-        onStage: (stage, d) => setActivity({ period, kind: "record", stage, txHash: d?.txHash }),
+        schemaUID: v2 ? config.schemas.payEventV2! : config.schemas.payEvent, schemaString: v2 ? SCHEMA_DEFS.payEventV2 : SCHEMA_DEFS.payEvent, signer: w,
+        fields: v2
+          ? [...common,
+            { name: "expectedCents", value: BigInt(expected), type: "uint256" },
+            { name: "receivedCents", value: BigInt(amount), type: "uint256" },
+            { name: "status", value: st, type: "uint8" },
+            { name: "detailHash", value: detailHash, type: "bytes32" },
+            { name: "supersedes", value: supersedes || ZeroHash, type: "bytes32" }]
+          : [...common,
+            { name: "amountCents", value: BigInt(amount), type: "uint256" },
+            { name: "status", value: st, type: "uint8" },
+            { name: "detailHash", value: detailHash, type: "bytes32" }],
+        onStage: (stage, d) => {
+          if (d?.txHash && !txHash) { txHash = d.txHash; patch(period, { submission: sub("submitted", { txHash }) }); }
+          setActivity({ period, kind: "record", stage, txHash: d?.txHash });
+        },
       });
-      patch(period, { payEventUID: res.uid, payEventTx: res.txHash, signedAt: Date.now() });
+      patch(period, { payEventUID: res.uid, payEventTx: res.txHash, payEventSchema: v2 ? 2 : 1, signedAt: Date.now(), supersedes, submission: sub("confirmed", { txHash: res.txHash }) });
       setTimeout(() => setActivity(a => (a?.period === period ? null : a)), 1500);
       return res;
     } catch (e) {
       const ue = toUserError(e);
+      // Sent but not confirmed: the chain may still have it. Keep the hash and let reconciliation decide.
+      patch(period, { submission: txHash ? sub("unknown", { txHash, error: ue.code }) : sub("failed", { error: ue.code }) });
       setLastError(ue);
       setActivity(null);
       throw ue;
     }
   }, [config, ledger, patch]);
 
+  /** Resolves a record whose transaction was sent but whose result this device never learnt. */
+  const checkSubmission = useCallback(async (period: number) => {
+    const rec = ledger?.records.find(r => r.period === period);
+    const tx = rec?.submission?.txHash;
+    if (!rec || !tx) return "none" as const;
+    const { resolveSubmission } = await attestModule();
+    const res = await resolveSubmission(tx);
+    if (res.state === "confirmed") patch(period, { payEventUID: res.uid, payEventTx: tx, signedAt: rec.signedAt || Date.now(), submission: { state: "confirmed", txHash: tx, at: Date.now() } });
+    else if (res.state === "failed") patch(period, { submission: { state: "failed", txHash: tx, at: Date.now(), error: "rejected" } });
+    return res.state;
+  }, [ledger, patch]);
+
   const recordAllPending = useCallback(async () => {
     if (!ledger) return;
     for (const r of ledger.records) {
-      if (!r.payEventUID) {
+      if (!r.payEventUID && r.submission?.state !== "unknown" && r.submission?.state !== "submitted") {
         try { await record(r.period, r.status, r.amountCents, r.note); } catch { break; }
       }
     }
@@ -222,7 +272,9 @@ export function useLedger(config: AppConfig | null, opts: { fastForward?: boolea
       recorded: rs.filter(r => r.payEventUID).length,
       confirmed: rs.filter(r => r.countersign?.decision === 1).length,
       unpaid: rs.filter(r => r.status === PAY_STATUS.UNPAID).length,
+      short: rs.filter(r => r.status !== PAY_STATUS.PAID).length,
       pending: rs.filter(r => !r.payEventUID).length,
+      unresolved: rs.filter(r => r.submission?.state === "unknown" || r.submission?.state === "submitted").length,
     };
   }, [ledger]);
 
@@ -231,8 +283,8 @@ export function useLedger(config: AppConfig | null, opts: { fastForward?: boolea
 
   return {
     ledger, address, activity, lastError, syncing, news, stats, history, due,
-    start, loadSample, recover, backup, reset, record, recordAllPending, prove, syncCountersigns, sync,
-    addMonth, updateMonth, updateProfile, dismiss, exportJson, patch,
+    start, loadSample, recover, backup, reset, record, checkSubmission, recordAllPending, prove, syncCountersigns, sync,
+    addMonth, updateMonth, removeDraft, markBackup, updateProfile, dismiss, exportJson, patch,
     clearNews: () => setNews([]), clearError: () => setLastError(null),
   };
 }

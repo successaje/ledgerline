@@ -14,6 +14,8 @@ export const explorer = {
 
 export const SCHEMA_DEFS = {
   payEvent: "bytes32 workerId,bytes32 employerId,uint32 period,uint256 amountCents,uint8 status,bytes32 detailHash",
+  /** v2 carries expected and received separately and declares which earlier record a correction supersedes. */
+  payEventV2: "bytes32 workerId,bytes32 employerId,uint32 period,uint256 expectedCents,uint256 receivedCents,uint8 status,bytes32 detailHash,bytes32 supersedes",
   countersign: "bytes32 payEventUID,uint8 decision,bytes32 noteHash",
   bankProof: "bytes32 payEventUID,bytes32 predicateHash,bytes32 proofHash,uint8 method,bool satisfied",
 } as const;

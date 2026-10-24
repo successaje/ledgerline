@@ -76,7 +76,7 @@ The worker app is available in English, Tagalog, Bahasa Indonesia, Burmese and B
 ## Chain details
 
 - Network: Base Sepolia (chain id 84532). EAS `0x4200000000000000000000000000000000000021`, Schema Registry `0x4200000000000000000000000000000000000020`.
-- PayEvent `0x727cb593e24f6443adeab5c76f7d32346bee1946f2f655f596df75bd86129e5c` · Countersign `0x41a9799c98f850f33f146251c65f65d2b36be5833dc4936fcd88a0a59dac65c2` · BankProof `0xf5956e3b0cc6f69c8f93f008b75e7de329b84fdd3bc45db96bee7167bce503df`
+- PayEvent v2 `0xb30a394de0f0e18c20ca0710fcc8f6670587d7247e653cc98f32c99c22e9bb30` (expected, received, supersedes) · PayEvent v1 `0x727cb593e24f6443adeab5c76f7d32346bee1946f2f655f596df75bd86129e5c` (read for earlier records) · Countersign `0x41a9799c98f850f33f146251c65f65d2b36be5833dc4936fcd88a0a59dac65c2` · BankProof `0xf5956e3b0cc6f69c8f93f008b75e7de329b84fdd3bc45db96bee7167bce503df`
 - Relayer (gas only) `0x58C90453b6cdEc0aC348C4D6ef4a3470E63aC7fb` · Synthetic bank attestor `0x511f493a74505E7420E9850E3E4978110D072379`
 
 ## Local development
@@ -93,9 +93,13 @@ npm run dev                       # http://localhost:3000
 | `RPC_URL`, `NEXT_PUBLIC_RPC_URL` | Base Sepolia RPC (server and client). The relayer falls back to public RPCs. |
 | `RELAYER_PRIVATE_KEY` | Pays gas for delegated attestations. Testnet only. |
 | `BANK_ATTESTOR_PRIVATE_KEY`, `NEXT_PUBLIC_BANK_ATTESTOR_ADDRESS` | Signs statement-window proofs (method 2). |
-| `NEXT_PUBLIC_SCHEMA_PAYEVENT`, `_COUNTERSIGN`, `_BANKPROOF` | Schema UIDs. |
+| `NEXT_PUBLIC_SCHEMA_PAYEVENT`, `_PAYEVENT_V2`, `_COUNTERSIGN`, `_BANKPROOF` | Schema UIDs. Without `_PAYEVENT_V2` the app writes v1 and keeps expected pay local. |
 | `RECLAIM_APP_ID`, `RECLAIM_APP_SECRET` | Optional; enables zkFetch (method 1). |
 | `NEXT_PUBLIC_BASE_URL` | Public URL, used by zkFetch to reach the statement endpoint. |
+
+## Worker app routes (redesign branch)
+
+`/app` Home paybook · `/app/records` list and `/app/records/[period]` detail · `/app/record` four-stage flow (Month, Payment, Supporting information, Review with payload preview and consent) · `/app/share` explicit month selection · `/app/settings` profile, pay, language, backup check, restore, export · `/app/start` onboarding. Employer responses are Acknowledge / Disagree at `/employer`; shared records are checked at `/verify`. See `docs/REDESIGN_REPORT.md`.
 
 ## Testing
 
@@ -106,6 +110,18 @@ npm run build
 ```
 
 CI runs all three on every push and pull request.
+
+End-to-end (needs a running server on :3000):
+
+```bash
+npx playwright test
+```
+
+Screenshots and vitals at 320 / 375 / 768 / 1440 into `docs/screenshots`:
+
+```bash
+node scripts/screenshots.mjs http://localhost:3000
+```
 
 ## Deployment
 
