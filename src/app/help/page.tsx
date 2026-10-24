@@ -20,7 +20,7 @@ const faqs: { q: string; a: React.ReactNode }[] = [
 
 export default function HelpPage() {
   return (
-    <Shell nav={<><Pill tone="outline">Help</Pill><Link className="btn btn-primary btn-sm" href="/app">Open the app</Link></>}>
+    <Shell nav={<><Pill tone="outline">Help</Pill><Link className="btn btn-primary btn-sm" href="/app">Records</Link></>}>
       <div style={{ maxWidth: 680, margin: "0 auto", display: "grid", gap: 20 }}>
         <div><h1>Help</h1><p className="muted" style={{ marginTop: 6 }}>Short answers to the questions people ask before they trust a record with their salary.</p></div>
         <div style={{ display: "grid", gap: 8 }}>

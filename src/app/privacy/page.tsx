@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Privacy", description: "What Ledgerl
 
 export default function PrivacyPage() {
   return (
-    <Shell nav={<><Pill tone="outline">Privacy</Pill><Link className="btn btn-primary btn-sm" href="/app">Open the app</Link></>}>
+    <Shell nav={<><Pill tone="outline">Privacy</Pill><Link className="btn btn-primary btn-sm" href="/app">Records</Link></>}>
       <div style={{ maxWidth: 680, margin: "0 auto", display: "grid", gap: 20 }}>
         <div><h1>Privacy</h1><p className="muted" style={{ marginTop: 6 }}>Ledgerline is built so that the least possible is stored anywhere but your own phone. This page says exactly what goes where.</p></div>
         <div className="panel">
