@@ -66,7 +66,7 @@ function VerifyInner() {
           out.push(v); setVerdicts([...out]);
         }
         setState("done"); logEvent("verify_done", { ok: out.every(v => v.checks.every(c => c.ok !== false)) });
-        if (out.some(v => !v.found) && runId < 2) setTimeout(() => setRunId(r => r + 1), 20_000);
+        if (out.some(v => !v.found) && runId < 4) setTimeout(() => setRunId(r => r + 1), 15_000);
       } catch { if (!cancelled) setState("error"); }
     })();
     return () => { cancelled = true; };
