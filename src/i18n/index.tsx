@@ -3,14 +3,18 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { en, type Dict } from "./en";
 import { tl } from "./tl";
 import { id } from "./id";
+import { my } from "./my";
+import { bn } from "./bn";
 
-export type Lang = "en" | "tl" | "id";
+export type Lang = "en" | "tl" | "id" | "my" | "bn";
 export const LANGS: { code: Lang; label: string }[] = [
   { code: "en", label: "English" },
   { code: "tl", label: "Tagalog" },
   { code: "id", label: "Bahasa Indonesia" },
+  { code: "my", label: "မြန်မာ" },
+  { code: "bn", label: "বাংলা" },
 ];
-const DICTS: Record<Lang, Dict> = { en, tl, id };
+const DICTS: Record<Lang, Dict> = { en, tl, id, my, bn };
 const KEY = "ll.lang";
 
 type Vars = Record<string, string | number>;
@@ -29,6 +33,8 @@ function detect(): Lang {
     const nav = (navigator.language || "").toLowerCase();
     if (nav.startsWith("tl") || nav.startsWith("fil")) return "tl";
     if (nav.startsWith("id")) return "id";
+    if (nav.startsWith("my")) return "my";
+    if (nav.startsWith("bn")) return "bn";
   } catch {}
   return "en";
 }

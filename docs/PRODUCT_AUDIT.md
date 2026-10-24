@@ -92,7 +92,7 @@ Before → after the production pass (PRs #7 to #11).
 17. Indexer retry with backoff; nonce caching; tests for reconciliation and activity derivation.
 
 ### Future bets
-18. Languages: Tagalog and Bahasa Indonesia shipped (worker app); Burmese and Bengali pending; all need native review.
+18. Languages: Tagalog, Bahasa Indonesia, Burmese and Bengali shipped for the worker app; all need native review.
 19. Telegram or WhatsApp reminders on payday and when an employer answers (needs a notification identity; opt-in).
 20. Real bank providers via zkTLS; NGO caseworker console with consented aggregate view; recruitment-fee receipts; seafarer mode.
 
