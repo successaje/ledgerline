@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Ledgerline intro</title>
+<style>
+  :root { --paper:#F7F8F4; --paper2:#fff; --ink:#172C2A; --ink2:#52635F; --green:#145C52; --mint:#E6F2EC; --amber:#6D4A00; --amber2:#FFF2D6; --coral:#9A3527; --coral2:#FCE8E3; --line:#DCE3DF; }
+  * { box-sizing:border-box; margin:0; }
+  html,body { width:1280px; height:720px; overflow:hidden; background:var(--paper); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .scene { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; }
+  .brand { display:flex; align-items:center; gap:18px; font-size:64px; font-weight:700; letter-spacing:-.02em; }
+  .brand .m { width:76px; height:76px; border-radius:17px; background:#17191C; display:grid; place-items:center; }
+  .brand .m i { display:block; width:34px; height:5px; border-radius:3px; background:#F7F5F0; margin:5px 0; }
+  .brand .m i:last-child { background:#34D399; }
+  .brand span b { color:var(--green); font-weight:700; }
+  .tag { position:absolute; top:52px; left:50%; transform:translateX(-50%); font-size:18px; font-weight:600; color:var(--amber); background:var(--amber2); padding:6px 16px; border-radius:999px; }
+  h1 { font-size:54px; line-height:1.1; font-weight:650; letter-spacing:-.02em; max-width:17ch; }
+  .sub { font-size:26px; line-height:1.4; color:var(--ink2); margin-top:18px; max-width:40ch; }
+  .col { display:grid; gap:0; }
+  .two { display:grid; grid-template-columns: 560px 520px; gap:60px; align-items:center; }
+  .card { background:var(--paper2); border:1px solid var(--line); border-radius:20px; padding:28px; width:520px; }
+  .month { font-size:30px; font-weight:650; display:flex; justify-content:space-between; align-items:center; }
+  .pill { font-size:17px; font-weight:600; padding:6px 14px; border-radius:999px; }
+  .pill.warn { background:var(--amber2); color:var(--amber); } .pill.ok { background:var(--mint); color:#0E423B; } .pill.bad { background:var(--coral2); color:var(--coral); } .pill.n { background:#EEF1EC; color:var(--ink2); }
+  .cells { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:22px; }
+  .cell { background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  .cell .k { font-size:15px; color:var(--ink2); } .cell .v { font-size:30px; font-weight:650; margin-top:4px; font-variant-numeric:tabular-nums; } .cell .v.red { color:var(--coral); } .cell .n { font-size:14px; color:var(--ink2); margin-top:4px; }
+  .row { display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-top:1px solid var(--line); font-size:19px; }
+  .row:first-of-type { border-top:0; }
+  .check { display:grid; grid-template-columns:30px 1fr; gap:14px; align-items:start; padding:12px 0; border-top:1px solid var(--line); font-size:19px; }
+  .check .dot { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-size:15px; font-weight:700; color:#fff; }
+  .check .dot.ok { background:var(--green); } .check .dot.wait { background:#71857F; }
+  .check b { display:block; } .check small { color:var(--ink2); font-size:16px; }
+  .steps { display:flex; gap:16px; margin-top:34px; }
+  .step { background:var(--paper2); border:1px solid var(--line); border-radius:16px; padding:18px 20px; width:250px; font-size:19px; font-weight:600; display:flex; gap:12px; align-items:center; }
+  .step i { width:34px; height:34px; border-radius:50%; background:var(--green); color:#fff; display:grid; place-items:center; font-style:normal; font-size:17px; flex:none; }
+  .foot { position:absolute; bottom:48px; left:50%; transform:translateX(-50%); font-size:20px; color:var(--ink2); }
+  /* motion: everything is driven by keyframes keyed to the scene start */
+  @keyframes fadein { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+  @keyframes fadeout { to { opacity:0; } }
+  @keyframes pop { 0% { opacity:0; transform:scale(.6); } 60% { transform:scale(1.06); } 100% { opacity:1; transform:scale(1); } }
+  @keyframes count500 { from { --n: 0; } to { --n: 500; } }
+  .a { opacity:0; animation: fadein .5s cubic-bezier(.2,0,0,1) forwards; }
+  .p { opacity:0; animation: pop .45s cubic-bezier(.2,0,0,1) forwards; }
+</style></head>
+<body>
+<!-- Scene 1: brand -->
+<section class="scene" id="s1" style="animation: fadein .6s forwards, fadeout .5s 4.4s forwards">
+  <div class="col" style="text-align:center">
+    <div class="brand" style="justify-content:center"><div class="m"><i></i><i></i><i></i></div><span>Ledger<b>line</b></span></div>
+    <div class="sub a" style="margin:22px auto 0; animation-delay:.9s">A pay record you keep yourself.</div>
+    <div class="sub a" style="margin:6px auto 0; font-size:20px; animation-delay:1.9s">For migrant domestic workers in Singapore.</div>
+  </div>
+</section>
+<!-- Scene 2: the problem -->
+<section class="scene" id="s2" style="animation: fadein .5s 4.9s forwards, fadeout .5s 11.4s forwards">
+  <div class="col" style="max-width:900px; text-align:center">
+    <h1 class="a" style="margin:0 auto; animation-delay:5.1s">When pay goes missing, the only record is the employer's word.</h1>
+    <div class="sub a" style="margin:22px auto 0; animation-delay:6.4s">Screenshots and chat messages are easy to dispute. Nothing was written down at the time, by the worker, that anyone else can check.</div>
+  </div>
+</section>
+<!-- Scene 3: record expected vs received -->
+<section class="scene" id="s3" style="animation: fadein .5s 11.9s forwards, fadeout .5s 20.4s forwards">
+  <div class="two">
+    <div class="col">
+      <h1 class="a" style="animation-delay:12.1s">Each month, write down what you expected and what you received.</h1>
+      <div class="sub a" style="animation-delay:13.4s">Signed by a key on your phone. Names and notes stay on the phone; the amounts go to a public test network and cannot be changed later.</div>
+    </div>
+    <div class="card p" style="animation-delay:12.6s">
+      <div class="month">July 2026 <span class="pill warn p" style="animation-delay:16.2s">Partly paid</span></div>
+      <div class="cells">
+        <div class="cell a" style="animation-delay:13.6s"><div class="k">Expected</div><div class="v">S$700</div></div>
+        <div class="cell a" style="animation-delay:14.6s"><div class="k">Recorded received</div><div class="v">S$500</div></div>
+        <div class="cell a" style="animation-delay:15.6s"><div class="k">Difference</div><div class="v red">S$200</div><div class="n">S$200 short</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- Scene 4: employer responds -->
+<section class="scene" id="s4" style="animation: fadein .5s 20.9s forwards, fadeout .5s 28.4s forwards">
+  <div class="two">
+    <div class="card p" style="animation-delay:21.4s">
+      <div class="month">July 2026 <span class="pill n">Awaiting response</span></div>
+      <div style="margin-top:18px">
+        <div class="row"><span style="color:var(--ink2)">Worker recorded</span><b>Partly paid</b></div>
+        <div class="row"><span style="color:var(--ink2)">Expected</span><b>S$700</b></div>
+        <div class="row"><span style="color:var(--ink2)">Recorded received</span><b>S$500</b></div>
+        <div class="row"><span style="color:var(--ink2)">Response requested by</span><b>14 July</b></div>
+      </div>
+      <div style="display:flex; gap:12px; margin-top:18px">
+        <span class="pill ok p" style="font-size:19px; padding:12px 22px; animation-delay:24.6s">✓ Acknowledge</span>
+        <span class="pill bad" style="font-size:19px; padding:12px 22px; opacity:.55">✕ Disagree</span>
+      </div>
+    </div>
+    <div class="col">
+      <h1 class="a" style="animation-delay:21.1s">Your employer responds from a link.</h1>
+      <div class="sub a" style="animation-delay:22.4s">Acknowledge or disagree, signed from their own phone. No response by the deadline is recorded too, as silence, not as blame.</div>
+    </div>
+  </div>
+</section>
+<!-- Scene 5: share -->
+<section class="scene" id="s5" style="animation: fadein .5s 28.9s forwards, fadeout .5s 36.4s forwards">
+  <div class="two">
+    <div class="col">
+      <h1 class="a" style="animation-delay:29.1s">Share only the months you choose.</h1>
+      <div class="sub a" style="animation-delay:30.4s">Anyone with the link re-checks each month against the public record and reads a plain sentence. Nothing else about you is shown.</div>
+    </div>
+    <div class="card p" style="animation-delay:29.6s">
+      <div class="month">July 2026 <span class="pill warn">Partly paid · S$500 received</span></div>
+      <div style="margin-top:14px">
+        <div class="check a" style="animation-delay:31.0s"><span class="dot ok">✓</span><span><b>Passed</b><small>Signature matches the worker's key</small></span></div>
+        <div class="check a" style="animation-delay:32.0s"><span class="dot ok">✓</span><span><b>Passed</b><small>Employer response recorded: acknowledged</small></span></div>
+        <div class="check a" style="animation-delay:33.0s"><span class="dot wait">·</span><span><b>Not checked</b><small>No bank evidence in this bundle</small></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- Scene 6: close -->
+<section class="scene" id="s6" style="animation: fadein .5s 36.9s forwards">
+  <div class="col" style="text-align:center">
+    <div class="brand" style="justify-content:center"><div class="m"><i></i><i></i><i></i></div><span>Ledger<b>line</b></span></div>
+    <div class="steps a" style="justify-content:center; animation-delay:37.6s">
+      <div class="step"><i>1</i>Record each month</div>
+      <div class="step"><i>2</i>Employer responds</div>
+      <div class="step"><i>3</i>Share what you choose</div>
+    </div>
+    <div class="sub a" style="margin:30px auto 0; animation-delay:38.8s">Here is how it works.</div>
+  </div>
+  <div class="foot a" style="animation-delay:38.2s">Test network only · Base Sepolia · No money moves</div>
+</section>
+</body></html>

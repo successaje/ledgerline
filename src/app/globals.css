@@ -484,3 +484,6 @@ details.acc > .acc-body { padding: 0 14px 14px; animation: pagein var(--t-accord
 .btn-row > .btn, .form-actions > .btn { min-width: 0; }
 .kv2, .review, .mrow-sub { min-width: 0; }
 .grid-2 > *, .grid-3 > * { min-width: 0; }
+/* With the demo strip showing, the sticky form actions sit above it instead of underneath it. */
+.wshell.has-demo .form-actions { bottom: 108px; }
+@media (min-width: 1024px) { .wshell.has-demo .form-actions { bottom: 36px; } }
