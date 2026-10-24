@@ -33,7 +33,7 @@ html, body { margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   background: var(--paper); color: var(--ink);
-  font: var(--fs-md)/1.5 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font: var(--fs-md)/1.5 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, "Noto Sans Myanmar", "Myanmar Text", "Padauk", "Noto Sans Bengali", "Bangla Sangam MN", "Vrinda", sans-serif;
   font-feature-settings: "cv11", "ss01", "tnum";
   -webkit-font-smoothing: antialiased;
 }
@@ -293,3 +293,7 @@ td.r, th.r { text-align: right; }
 /* Language switch */
 .lang-select { min-height: 32px; padding: 0 28px 0 10px; border-radius: var(--r-pill); border: 1px solid var(--line-2); background: var(--paper-2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%237b818b' stroke-width='1.5'/></svg>") no-repeat right 10px center; font-size: var(--fs-xs); font-weight: 600; color: var(--ink-2); appearance: none; cursor: pointer; }
 .lang-select:focus { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Scripts with taller glyphs need more line height to stay legible */
+html[lang="my"] body, html[lang="bn"] body { line-height: 1.75; }
+html[lang="my"] .btn, html[lang="bn"] .btn { line-height: 1.5; }

@@ -25,6 +25,6 @@
 - [x] Help and privacy pages, print-ready verifier, recipient loops (PR #9)
 - [x] Product analytics, offline shell, install prompt (PR #10)
 - [x] Focus-trapped sheets, indexer retries, employer inbox, verifier auto-retry (PR #11)
-- [x] Languages: Tagalog and Bahasa Indonesia for the worker app (PR #12); native review still wanted. Burmese and Bengali pending
+- [x] Languages: Tagalog, Bahasa Indonesia (PR #12), Burmese and Bengali (PR #13) for the worker app; native review still wanted
 - [ ] Reminders on payday and when an employer answers (opt-in channel needed)
 - [ ] Real bank statement provider via zkTLS

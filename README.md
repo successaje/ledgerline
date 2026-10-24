@@ -71,7 +71,7 @@ Flow of a record: `useLedger.record` → `services/attest.delegatedAttest` (enco
 
 ## Languages
 
-The worker app is available in English, Tagalog and Bahasa Indonesia. The language follows the phone's setting (`tl`/`fil` → Tagalog, `id` → Bahasa Indonesia) and can be changed in the header or in Settings; the choice is remembered on the device. Strings live in `src/i18n/en.ts`, `tl.ts` and `id.ts`; the `Dict` type guarantees every key exists in every language. The Tagalog and Bahasa Indonesia texts were written without a native reviewer: corrections are welcome as pull requests against those two files.
+The worker app is available in English, Tagalog, Bahasa Indonesia, Burmese and Bengali. The language follows the phone's setting (`tl`/`fil` → Tagalog, `id` → Bahasa Indonesia, `my` → Burmese, `bn` → Bengali) and can be changed in the header or in Settings; the choice is remembered on the device. Strings live in `src/i18n/en.ts`, `tl.ts`, `id.ts`, `my.ts` and `bn.ts`; the `Dict` type guarantees every key exists in every language. The translations were written without a native reviewer: corrections are welcome as pull requests against those files.
 
 ## Chain details
 
