@@ -6,12 +6,13 @@ import { PAY_STATUS } from "@/domain/types";
 import { hashJson, hashText, idFromAddress } from "@/domain/ids";
 import { periodWindow, sgd } from "@/domain/format";
 import { SCHEMA_DEFS, getReferencing } from "@/services/chain";
-import { delegatedAttest } from "@/services/attest";
 import { requestBankProof } from "@/services/api";
 import { getOrCreateKey, exportSecret, importSecret } from "@/services/keys";
 import { rebuildFromChain } from "@/services/recovery";
 import { loadLedger, saveLedger, sampleLedger, clearLedger, upsertRecord, newLedger } from "@/services/ledger-store";
 import { toUserError, type UserError } from "@/services/errors";
+
+const attestModule = () => import("@/services/attest");
 
 export type Activity = { period: number; kind: "record" | "proof"; stage: TxStage; txHash?: string };
 
@@ -66,6 +67,7 @@ export function useLedger(config: AppConfig | null) {
     patch(period, { status, amountCents: amount, note });
     try {
       const detailHash = hashJson({ worker: ledger.profile.name, employer: ledger.profile.employerLabel, note: note || "" });
+      const { delegatedAttest } = await attestModule();
       const res = await delegatedAttest({
         schemaUID: config.schemas.payEvent, schemaString: SCHEMA_DEFS.payEvent, signer: w,
         fields: [
@@ -109,6 +111,7 @@ export function useLedger(config: AppConfig | null) {
       const win = periodWindow(period, ledger.profile.payWindow.fromDay, ledger.profile.payWindow.toDay);
       const counterparty = ledger.profile.sample ? "TAN" : undefined;
       const p = await requestBankProof({ account: ledger.profile.sample ? "maria" : "demo", from: win.from, to: win.to, minAmountCents: rec.amountCents, counterparty });
+      const { delegatedAttest } = await attestModule();
       const res = await delegatedAttest({
         schemaUID: config.schemas.bankProof, schemaString: SCHEMA_DEFS.bankProof, signer: w, refUID: rec.payEventUID,
         fields: [

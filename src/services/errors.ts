@@ -12,6 +12,8 @@ export function toUserError(e: unknown): UserError {
     return new UserError("The recording service is out of testnet gas", "Your record is saved on this device. Try again in a few minutes; nothing is lost.");
   if (msg.includes("timeout") || msg.includes("etimedout") || msg.includes("network") || msg.includes("fetch failed") || msg.includes("502") || msg.includes("503"))
     return new UserError("The network is slow right now", "Your record is saved on this device and was not sent twice. Try again.");
+  if (msg.startsWith("rate-limited") || msg.includes("too many"))
+    return new UserError("Please slow down", "This network or key has made many records in a short time. Your record is saved on this device; try again later.");
   if (msg.includes("relayer not configured") || msg.startsWith("relayer-config"))
     return new UserError("Recording is not set up on this server", "The service wallet is missing. If you run this locally, check RELAYER_PRIVATE_KEY.");
   if (msg.includes("tx-failed"))
