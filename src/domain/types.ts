@@ -53,6 +53,8 @@ export type PayRecord = {
   submission?: Submission;
   payEventUID?: string;
   payEventTx?: string;
+  /** Which PayEvent schema the current attestation uses. 1 = amount only; 2 = expected, received and supersedes on chain. */
+  payEventSchema?: 1 | 2;
   signedAt?: number;
   /** Local link to the record this one corrected (the earlier attestation's UID). */
   supersedes?: string;
@@ -124,7 +126,7 @@ export const TX_STAGE_LABEL: Record<TxStage, string> = {
 export type AppConfig = {
   chainId: number;
   eas: string;
-  schemas: { payEvent: string; countersign: string; bankProof: string };
+  schemas: { payEvent: string; payEventV2?: string; countersign: string; bankProof: string };
   bankAttestor: string;
   zkTls: boolean;
   relayerReady: boolean;

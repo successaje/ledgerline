@@ -45,14 +45,14 @@ Baseline: `main` at PR #15, 24 Oct 2026. Branch for this work: `redesign/paybook
 | # | Decision | Status |
 |---|---|---|
 | 1 | Launch environment | Base Sepolia test network only; every write-path label says "test". No production chain. |
-| 2 | ⚠ PayEvent v2 schema `bytes32 workerId, bytes32 employerId, uint32 period, uint256 expectedCents, uint256 receivedCents, uint8 status, bytes32 detailHash, bytes32 supersedes` | Registering it is one transaction from the relayer on Base Sepolia (balance 0.00093 ETH, sufficient). Until authorized, the app keeps writing v1 and the review preview shows exactly which v1 fields are published and states that expected/received are local only. |
+| 2 | PayEvent v2 schema `bytes32 workerId, bytes32 employerId, uint32 period, uint256 expectedCents, uint256 receivedCents, uint8 status, bytes32 detailHash, bytes32 supersedes` | Authorized by the owner and registered on Base Sepolia on 24 Oct 2026 as `0xb30a394de0f0e18c20ca0710fcc8f6670587d7247e653cc98f32c99c22e9bb30`. The app writes v2 and reads both; the review preview lists expected, received and the superseded record id as published. |
 | 3 | Key storage | Browser `localStorage`, phrase-backed. Described as such everywhere; never as secure custody. Hardware or passkey custody is out of scope for this branch. |
 | 4 | Public schema and privacy | Month, amounts, status, hashed worker and employer ids, and a note hash are public and permanent. Stated on the review screen with explicit acknowledgment before publication. |
 | 5 | Evidence storage | No attachments are stored by the service in this branch. The flow offers notes only and says so; attachment upload is scoped out rather than faked. |
 | 6 | Employer identity | Possession of the link plus a device key. Shown as "signed from the device that opened the link", never "verified employer". |
 | 7 | Share-link capabilities | Anyone with the link can open it; no expiry, password or revocation. Stated verbatim. |
 | 8 | Demo-only parts | `/bank` and the signed-attestor proof path; the sample ledger. Labelled "Example" or "Demo" in every view that shows them. |
-| 9 | ⚠ Merge and deploy | Not assumed. The branch gets Vercel preview URLs automatically; production stays on `main` until the owner merges. |
+| 9 | Merge and deploy | Authorized by the owner on 24 Oct 2026; merged as PR #16. |
 
 ## 4a. Status at the end of the branch (24 Oct 2026)
 

@@ -4,6 +4,7 @@ import type { Wallet } from "ethers";
 import type { AppConfig, Ledger, PayRecord, PayStatus, Profile, Submission, TxStage } from "@/domain/types";
 import { PAY_STATUS } from "@/domain/types";
 import { hashJson, hashText, idFromAddress, idFromLabel } from "@/domain/ids";
+import { ZeroHash } from "ethers";
 import { periodWindow, sgd } from "@/domain/format";
 import { deriveActivity, sinceLastVisit, type ActivityEvent } from "@/domain/activity";
 import { computeDue, type Due } from "@/domain/due";
@@ -144,22 +145,31 @@ export function useLedger(config: AppConfig | null, opts: { fastForward?: boolea
     try {
       const detailHash = hashJson({ worker: ledger.profile.name, employer: ledger.profile.employerLabel, note: nt || "", expectedCents: expected, receivedOn: receivedOn || "", supersedes: supersedes || "" });
       const { delegatedAttest } = await attestModule();
+      const v2 = Boolean(config.schemas.payEventV2);
+      const common = [
+        { name: "workerId", value: idFromAddress(w.address), type: "bytes32" },
+        { name: "employerId", value: ledger.profile.employerId, type: "bytes32" },
+        { name: "period", value: period, type: "uint32" },
+      ];
       const res = await delegatedAttest({
-        schemaUID: config.schemas.payEvent, schemaString: SCHEMA_DEFS.payEvent, signer: w,
-        fields: [
-          { name: "workerId", value: idFromAddress(w.address), type: "bytes32" },
-          { name: "employerId", value: ledger.profile.employerId, type: "bytes32" },
-          { name: "period", value: period, type: "uint32" },
-          { name: "amountCents", value: BigInt(amount), type: "uint256" },
-          { name: "status", value: st, type: "uint8" },
-          { name: "detailHash", value: detailHash, type: "bytes32" },
-        ],
+        schemaUID: v2 ? config.schemas.payEventV2! : config.schemas.payEvent, schemaString: v2 ? SCHEMA_DEFS.payEventV2 : SCHEMA_DEFS.payEvent, signer: w,
+        fields: v2
+          ? [...common,
+            { name: "expectedCents", value: BigInt(expected), type: "uint256" },
+            { name: "receivedCents", value: BigInt(amount), type: "uint256" },
+            { name: "status", value: st, type: "uint8" },
+            { name: "detailHash", value: detailHash, type: "bytes32" },
+            { name: "supersedes", value: supersedes || ZeroHash, type: "bytes32" }]
+          : [...common,
+            { name: "amountCents", value: BigInt(amount), type: "uint256" },
+            { name: "status", value: st, type: "uint8" },
+            { name: "detailHash", value: detailHash, type: "bytes32" }],
         onStage: (stage, d) => {
           if (d?.txHash && !txHash) { txHash = d.txHash; patch(period, { submission: sub("submitted", { txHash }) }); }
           setActivity({ period, kind: "record", stage, txHash: d?.txHash });
         },
       });
-      patch(period, { payEventUID: res.uid, payEventTx: res.txHash, signedAt: Date.now(), supersedes, submission: sub("confirmed", { txHash: res.txHash }) });
+      patch(period, { payEventUID: res.uid, payEventTx: res.txHash, payEventSchema: v2 ? 2 : 1, signedAt: Date.now(), supersedes, submission: sub("confirmed", { txHash: res.txHash }) });
       setTimeout(() => setActivity(a => (a?.period === period ? null : a)), 1500);
       return res;
     } catch (e) {

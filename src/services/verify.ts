@@ -32,12 +32,17 @@ export async function verifyItem(bundle: Bundle, item: BundleItem, schemas: { co
     return { item, checks: [{ outcome: "unavailable", category: "availability", label: "Record not in the index yet", detail: "The index can lag the chain by a minute. This page re-checks on its own." }], sentence: `${periodLabel(item.period)}: could not be checked yet.`, found: false, paymentLabel: label };
   }
   const attesterOk = pe.attester.toLowerCase() === bundle.worker.address.toLowerCase();
-  const fieldsOk = Number(pe.decoded.period) === item.period && String(pe.decoded.amountCents) === String(item.amountCents) && Number(pe.decoded.status) === item.status;
+  const v2 = "receivedCents" in pe.decoded;
+  const chainAmount = String(v2 ? pe.decoded.receivedCents : pe.decoded.amountCents);
+  const expectedOk = !v2 || typeof item.expectedCents !== "number" || String(pe.decoded.expectedCents) === String(item.expectedCents);
+  const fieldsOk = Number(pe.decoded.period) === item.period && chainAmount === String(item.amountCents) && Number(pe.decoded.status) === item.status && expectedOk;
+  const supersedes = v2 ? String(pe.decoded.supersedes || "") : "";
+  const corrects = supersedes && !/^0x0+$/.test(supersedes) ? supersedes : "";
   checks.push({
     outcome: attesterOk && fieldsOk && !pe.revoked ? "passed" : "failed",
     category: "integrity",
     label: attesterOk ? `Signature matches the worker's key (signed ${new Date(pe.time * 1000).toLocaleDateString("en-SG")})` : "Record was not signed by the worker's key",
-    detail: `${fieldsOk ? "Month, amount and payment status match the bundle" : "Fields differ from the bundle"}${pe.revoked ? " · revoked" : ""}. A matching signature shows origin and integrity; it does not by itself show that money moved.`,
+    detail: `${fieldsOk ? (v2 ? "Month, expected, received and payment status match the shared record" : "Month, amount and payment status match the shared record") : "Fields differ from the shared record"}${pe.revoked ? " · revoked" : ""}${corrects ? ` · this record corrects an earlier one (${corrects.slice(0, 10)}…), which stays on chain` : ""}. A matching signature shows origin and integrity; it does not by itself show that money moved.`,
     link: explorerLink(pe.id),
   });
 
@@ -98,7 +103,7 @@ export async function verifyItem(bundle: Bundle, item: BundleItem, schemas: { co
   const month = periodLabel(item.period, true);
   const who = bundle.worker.name;
   const emp = employer === "acknowledged" ? "The employer acknowledged this statement." : employer === "disagreed" ? "The employer disagreed with this statement." : employer === "awaiting" ? "The employer's response window is still open." : employer === "unknown" ? "The employer response could not be looked up." : "No employer response was recorded by the deadline.";
-  const expected = typeof item.expectedCents === "number" ? item.expectedCents : item.status === PAY_STATUS.UNPAID && item.amountCents > 0 ? item.amountCents : undefined;
+  const expected = v2 ? Number(pe.decoded.expectedCents) : typeof item.expectedCents === "number" ? item.expectedCents : item.status === PAY_STATUS.UNPAID && item.amountCents > 0 ? item.amountCents : undefined;
   const exp = expected !== undefined ? ` of ${sgd(expected)} expected` : "";
   const stated = item.status === PAY_STATUS.UNPAID ? `recorded this month as not paid${expected !== undefined ? ` (${sgd(expected)} expected, nothing received)` : ""}` : item.status === PAY_STATUS.PARTIAL ? `recorded this month as partly paid (${sgd(item.amountCents)} received${exp})` : `recorded ${sgd(item.amountCents)} as paid in full`;
   const sentence = `${month}: ${who} ${stated}. ${emp} ${bankSentence}`.trim();

@@ -1,6 +1,24 @@
 import type { Ledger, PayRecord, PayStatus, ProofMethod } from "@/domain/types";
 import { idFromLabel } from "@/domain/ids";
-import { getByAttester, getReferencing } from "./chain";
+import { getByAttester, getReferencing, type IndexedAttestation } from "./chain";
+
+type Schemas = { payEvent: string; payEventV2?: string; countersign: string; bankProof: string };
+
+/** PayEvents for a key across both schema versions, ascending by time. */
+async function payEvents(address: string, schemas: Schemas): Promise<IndexedAttestation[]> {
+  const [v1, v2] = await Promise.all([getByAttester(address, schemas.payEvent), schemas.payEventV2 ? getByAttester(address, schemas.payEventV2) : Promise.resolve([])]);
+  return [...v1, ...v2].sort((a, b) => a.time - b.time);
+}
+
+/** The record fields an attestation carries, for either schema version. */
+export function fieldsOf(a: IndexedAttestation): Pick<PayRecord, "amountCents" | "expectedCents" | "status" | "supersedes" | "payEventSchema"> {
+  const status = Number(a.decoded.status) as PayStatus;
+  if ("receivedCents" in a.decoded) {
+    const sup = String(a.decoded.supersedes || "");
+    return { amountCents: Number(a.decoded.receivedCents), expectedCents: Number(a.decoded.expectedCents), status, supersedes: /^0x0+$/.test(sup) ? undefined : sup, payEventSchema: 2 };
+  }
+  return { amountCents: Number(a.decoded.amountCents), status, payEventSchema: 1 };
+}
 
 /**
  * Rebuilds a ledger from the chain for a worker key. Names and notes were never on chain,
@@ -8,10 +26,10 @@ import { getByAttester, getReferencing } from "./chain";
  */
 export async function rebuildFromChain(input: {
   address: string;
-  schemas: { payEvent: string; countersign: string; bankProof: string };
+  schemas: Schemas;
   name: string; employerLabel: string; salaryCents: number;
 }): Promise<Ledger> {
-  const events = await getByAttester(input.address, input.schemas.payEvent);
+  const events = await payEvents(input.address, input.schemas);
   // Keep the latest attestation per period (a month can be re-recorded).
   const byPeriod = new Map<number, (typeof events)[number]>();
   for (const a of events) byPeriod.set(Number(a.decoded.period), a);
@@ -26,8 +44,7 @@ export async function rebuildFromChain(input: {
     const pf = proofs.find(p => p.refUID === a.id && p.attester.toLowerCase() === input.address.toLowerCase());
     const r: PayRecord = {
       period: Number(a.decoded.period),
-      amountCents: Number(a.decoded.amountCents),
-      status: Number(a.decoded.status) as PayStatus,
+      ...fieldsOf(a),
       payEventUID: a.id,
       payEventTx: a.txid,
       signedAt: Number(a.time) * 1000,
@@ -55,15 +72,15 @@ export type MergeResult = { ledger: Ledger; added: number; updated: number; answ
  * (a refresh mid-transaction, another device), picks up employer answers and proofs, and keeps local detail
  * (notes, proof text) untouched. Never deletes anything local.
  */
-export async function mergeFromChain(ledger: Ledger, address: string, schemas: { payEvent: string; countersign: string; bankProof: string }): Promise<MergeResult> {
-  const events = await getByAttester(address, schemas.payEvent);
+export async function mergeFromChain(ledger: Ledger, address: string, schemas: Schemas): Promise<MergeResult> {
+  const events = await payEvents(address, schemas);
   const byPeriod = new Map<number, (typeof events)[number]>();
   for (const a of events) byPeriod.set(Number(a.decoded.period), a); // ascending time: last wins
   let added = 0, updated = 0;
   const records = [...ledger.records];
   for (const [period, a] of byPeriod) {
     const i = records.findIndex(r => r.period === period);
-    const fromChain = { payEventUID: a.id, payEventTx: a.txid, signedAt: Number(a.time) * 1000, status: Number(a.decoded.status) as PayStatus, amountCents: Number(a.decoded.amountCents) };
+    const fromChain = { payEventUID: a.id, payEventTx: a.txid, signedAt: Number(a.time) * 1000, ...fieldsOf(a) };
     const confirmed = { state: "confirmed" as const, txHash: a.txid, at: Number(a.time) * 1000 };
     if (i === -1) { records.push({ period, ...fromChain, submission: confirmed }); added++; }
     else if (records[i].payEventUID !== a.id) {

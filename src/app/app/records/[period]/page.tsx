@@ -130,7 +130,7 @@ export default function RecordDetailPage() {
                 <dt>{t("rd_signer")}</dt><dd className="mono">{L.address}</dd>
                 {r.payEventUID && <><dt>{t("rd_uid")}</dt><dd className="mono"><a href={explorer.attestation(r.payEventUID)} target="_blank" rel="noreferrer">{r.payEventUID}</a></dd></>}
                 {(r.payEventTx || r.submission?.txHash) && <><dt>{t("rd_tx")}</dt><dd className="mono"><a href={explorer.tx(r.payEventTx || r.submission!.txHash!)} target="_blank" rel="noreferrer">{r.payEventTx || r.submission!.txHash}</a></dd></>}
-                <dt>{t("rd_schema")}</dt><dd className="mono">{SCHEMA_DEFS.payEvent}{config?.schemas.payEvent ? <><br />{config.schemas.payEvent}</> : null}</dd>
+                <dt>{t("rd_schema")}</dt><dd className="mono">{r.payEventSchema === 2 ? SCHEMA_DEFS.payEventV2 : SCHEMA_DEFS.payEvent}{(r.payEventSchema === 2 ? config?.schemas.payEventV2 : config?.schemas.payEvent) ? <><br />{r.payEventSchema === 2 ? config!.schemas.payEventV2 : config!.schemas.payEvent}</> : null}</dd>
                 {r.supersedes && <><dt>{t("rd_supersedes")}</dt><dd className="mono"><a href={explorer.attestation(r.supersedes)} target="_blank" rel="noreferrer">{r.supersedes}</a></dd></>}
               </dl>
               {r.previous && r.previous.length > 0 && (

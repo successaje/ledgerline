@@ -15,7 +15,7 @@ export class RelayerError extends Error {
 
 /** Only Ledgerline's own schemas may be relayed; anything else is someone else's gas bill. */
 export function allowedSchemas(): Set<string> {
-  return new Set([process.env.NEXT_PUBLIC_SCHEMA_PAYEVENT, process.env.NEXT_PUBLIC_SCHEMA_COUNTERSIGN, process.env.NEXT_PUBLIC_SCHEMA_BANKPROOF].filter(Boolean).map(s => s!.toLowerCase()));
+  return new Set([process.env.NEXT_PUBLIC_SCHEMA_PAYEVENT, process.env.NEXT_PUBLIC_SCHEMA_PAYEVENT_V2, process.env.NEXT_PUBLIC_SCHEMA_COUNTERSIGN, process.env.NEXT_PUBLIC_SCHEMA_BANKPROOF].filter(Boolean).map(s => s!.toLowerCase()));
 }
 
 const MAX_DATA_BYTES = 2048; // our largest schema encodes to 192 bytes; leave room, refuse blobs

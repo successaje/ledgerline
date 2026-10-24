@@ -1,6 +1,6 @@
 # Redesign completion report
 
-Branch `redesign/paybook`, 24 Oct 2026. Four commits on top of `main` at PR #15. Nothing is merged or deployed to production; Vercel builds preview URLs for the branch on its own.
+Branch `redesign/paybook`, 24 Oct 2026. Four commits on top of `main` at PR #15. Merged to `main` on 24 Oct 2026 after the owner's authorization; `main` deploys to https://ledgerline-sg.vercel.app.
 
 ## What changed
 
@@ -156,7 +156,7 @@ The earlier CLS of 0.1 on Home, detail and Settings came from the demo banner in
 
 ## Unresolved dependencies (owner decisions)
 
-1. **PayEvent v2 schema** (`expectedCents`, `receivedCents`, `supersedes` on chain). One registration transaction from the relayer on Base Sepolia. Until then expected pay and supersession are local and disclosed in the share bundle only; the review preview says so.
-2. **Merge and deploy.** The branch is not merged. `main` auto-deploys to https://ledgerline-sg.vercel.app, so merging is deploying.
+1. ~~PayEvent v2 schema~~ Registered as `0xb30a394de0f0e18c20ca0710fcc8f6670587d7247e653cc98f32c99c22e9bb30` after the owner's go-ahead; the app writes v2 (expected, received, supersedes on chain) and still reads v1 records. Verifier and reconciliation handle both.
+2. ~~Merge and deploy~~ Authorized; merged as PR #16.
 3. **Native review of the four translations.**
 4. **Demo recorder** rewrite for the new UI before any new demo video.

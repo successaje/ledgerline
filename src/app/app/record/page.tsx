@@ -51,7 +51,7 @@ function Flow() {
   }, [d, ledger0, wantPeriod, correcting]);
 
   return (
-    <Frame hideNav={phase !== "form"}>{({ L, ledger, ready, fail }) => {
+    <Frame hideNav={phase !== "form"}>{({ L, ledger, ready, fail, config }) => {
       if (!d) return null;
       const existing = ledger.records.find(r => r.period === d.period);
       const existingConfirmed = existing ? submissionOf(existing) === "confirmed" : false;
@@ -107,10 +107,13 @@ function Flow() {
         if (res === "confirmed") setPhase("done"); else if (res === "failed") setPhase("failed"); else push({ kind: "info", title: t("ss_still_pending") });
       };
 
+      const v2 = Boolean(config?.schemas.payEventV2);
       const payload = {
         [t("rf_pl_period")]: d.period,
+        ...(v2 ? { [t("rf_pl_expected")]: expectedCents } : {}),
         [t("rf_pl_amount")]: receivedCents,
         [t("rf_pl_status")]: `${d.status} (${d.status === PAY_STATUS.PAID ? t("pay_paid") : d.status === PAY_STATUS.PARTIAL ? t("pay_partial") : t("pay_unpaid")})`,
+        ...(v2 && existing?.payEventUID ? { [t("rf_pl_supersedes")]: shortAddr(existing.payEventUID, 10) } : {}),
         [t("rf_pl_worker")]: shortAddr(idFromAddress(L.address || "0x0000000000000000000000000000000000000000"), 10),
         [t("rf_pl_employer")]: shortAddr(ledger.profile.employerId, 10),
         [t("rf_pl_detail")]: shortAddr(hashJson({ worker: ledger.profile.name, employer: ledger.profile.employerLabel, note: d.note || "", expectedCents, receivedOn: d.receivedOn || "", supersedes: existing?.payEventUID || "" }), 10),
@@ -211,7 +214,7 @@ function Flow() {
                 <h2>{t("rf_will_publish")}</h2>
                 <p className="small muted">{t("rf_will_publish_text", { chain: CHAIN_NAME })}</p>
                 <div className="payload" aria-label={t("rf_will_publish")}>{Object.entries(payload).map(([k, v]) => <div key={k}><span className="pk">{k}: </span>{String(v)}</div>)}</div>
-                <p className="small muted">{t("rf_pl_not")}</p>
+                <p className="small muted">{v2 ? t("rf_pl_not_v2") : t("rf_pl_not")}</p>
               </section>
               {!ready && <Notice kind="warn">{t("rf_not_ready")}</Notice>}
               <label className="consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /><span>{t("rf_consent", { chain: CHAIN_NAME })}</span></label>

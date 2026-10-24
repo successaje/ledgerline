@@ -98,3 +98,26 @@ describe("unavailable is never failed", () => {
     expect(v.checks.find(c => c.category === "evidence")!.outcome).toBe("not_checked");
   });
 });
+
+describe("PayEvent v2", () => {
+  it("checks expected and received against the shared record and notes a correction", async () => {
+    const b = bundle(3, 50000);
+    b.items[0].expectedCents = 70000;
+    const pe = { ...payEvent(3, 50000), decoded: { period: 202610, expectedCents: "70000", receivedCents: "50000", status: 3, supersedes: "0x" + "ab".repeat(32) } };
+    vi.mocked(chain.getAttestation).mockResolvedValue(pe as never);
+    vi.mocked(chain.getReferencing).mockResolvedValue([]);
+    const v = await verifyItem(b, b.items[0], schemas, link);
+    expect(v.checks[0].outcome).toBe("passed");
+    expect(v.checks[0].detail).toContain("corrects an earlier one");
+    expect(v.sentence).toContain("S$500 received of S$700 expected");
+  });
+  it("fails integrity when the chain's expected amount differs from the shared one", async () => {
+    const b = bundle(3, 50000);
+    b.items[0].expectedCents = 90000;
+    const pe = { ...payEvent(3, 50000), decoded: { period: 202610, expectedCents: "70000", receivedCents: "50000", status: 3, supersedes: "0x" + "00".repeat(32) } };
+    vi.mocked(chain.getAttestation).mockResolvedValue(pe as never);
+    vi.mocked(chain.getReferencing).mockResolvedValue([]);
+    const v = await verifyItem(b, b.items[0], schemas, link);
+    expect(v.checks[0].outcome).toBe("failed");
+  });
+});
