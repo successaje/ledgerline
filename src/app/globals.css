@@ -289,3 +289,7 @@ td.r, th.r { text-align: right; }
   .main { padding: 0; }
   a[href]::after { content: ""; }
 }
+
+/* Language switch */
+.lang-select { min-height: 32px; padding: 0 28px 0 10px; border-radius: var(--r-pill); border: 1px solid var(--line-2); background: var(--paper-2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%237b818b' stroke-width='1.5'/></svg>") no-repeat right 10px center; font-size: var(--fs-xs); font-weight: 600; color: var(--ink-2); appearance: none; cursor: pointer; }
+.lang-select:focus { outline: 2px solid var(--focus); outline-offset: 2px; }

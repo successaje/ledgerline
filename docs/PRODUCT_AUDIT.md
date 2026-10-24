@@ -38,7 +38,7 @@ Before → after the production pass (PRs #7 to #11).
 | Product clarity | 9 | 9 | |
 | UX | 7 | 8 | Real-bank proof still synthetic; employer page has no reminder scheduling |
 | UI | 8 | 8 | Tablet widths 760–960 only lightly reviewed |
-| Personalization | 4 | 7 | No language; no remembered share channel |
+| Personalization | 4 | 8 | Tagalog and Bahasa Indonesia added (PR #12); no remembered share channel |
 | Onboarding | 8 | 8 | Pay window chosen in settings, not during onboarding |
 | Responsiveness | 8 | 8 | |
 | Mobile quality | 7 | 8 | Offline shell and install prompt added; no push notifications |
@@ -92,7 +92,7 @@ Before → after the production pass (PRs #7 to #11).
 17. Indexer retry with backoff; nonce caching; tests for reconciliation and activity derivation.
 
 ### Future bets
-18. Languages: Tagalog, Bahasa Indonesia, Burmese, Bengali for the worker app (needs native review).
+18. Languages: Tagalog and Bahasa Indonesia shipped (worker app); Burmese and Bengali pending; all need native review.
 19. Telegram or WhatsApp reminders on payday and when an employer answers (needs a notification identity; opt-in).
 20. Real bank providers via zkTLS; NGO caseworker console with consented aggregate view; recruitment-fee receipts; seafarer mode.
 

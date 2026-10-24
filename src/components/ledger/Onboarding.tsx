@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/Button";
 import { Field, TextInput, MoneyInput } from "@/components/ui/Field";
 import { Icon } from "@/components/ui/Icon";
 import { currentPeriod, prevPeriod } from "@/domain/format";
+import { useT } from "@/i18n";
 
 type Props = { onStart: (i: { name: string; employerLabel: string; salaryCents: number; startPeriod: number; endPeriod: number }) => void; onSample: () => void; onRestore: () => void };
 
 /** First visit. A key already exists on the device; this only collects what the ledger needs. */
 export function Onboarding({ onStart, onSample, onRestore }: Props) {
+  const { t } = useT();
   const [name, setName] = useState("");
   const [employer, setEmployer] = useState("");
   const [salary, setSalary] = useState("");
@@ -18,12 +20,12 @@ export function Onboarding({ onStart, onSample, onRestore }: Props) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = "Your first name is enough.";
-    if (!employer.trim()) errs.employer = "A name or phone number you will recognise.";
+    if (!name.trim()) errs.name = t("ob_name_err");
+    if (!employer.trim()) errs.employer = t("ob_employer_err");
     const cents = Math.round(parseFloat(salary) * 100);
-    if (!Number.isFinite(cents) || cents <= 0) errs.salary = "Enter the monthly amount in dollars.";
+    if (!Number.isFinite(cents) || cents <= 0) errs.salary = t("ob_salary_err");
     const n = parseInt(months, 10);
-    if (!(n >= 1 && n <= 24)) errs.months = "Between 1 and 24 months.";
+    if (!(n >= 1 && n <= 24)) errs.months = t("ob_months_err");
     setErrors(errs);
     if (Object.keys(errs).length) return;
     const end = prevPeriod(currentPeriod());
@@ -35,42 +37,38 @@ export function Onboarding({ onStart, onSample, onRestore }: Props) {
   return (
     <div className="app-grid">
       <div>
-        <h1>Start your pay record</h1>
-        <p className="muted" style={{ marginTop: 8, maxWidth: "52ch" }}>
-          Each month you mark whether you were paid. The record is signed by a key that lives only on this phone, so no employer, agency or app can rewrite it.
-        </p>
+        <h1>{t("ob_title")}</h1>
+        <p className="muted" style={{ marginTop: 8, maxWidth: "52ch" }}>{t("ob_intro")}</p>
         <form onSubmit={submit} className="panel panel-pad" style={{ marginTop: 20, display: "grid", gap: 16 }} noValidate>
-          <Field id="name" label="Your name" error={errors.name}>
+          <Field id="name" label={t("ob_name")} error={errors.name}>
             <TextInput id="name" value={name} onChange={e => setName(e.target.value)} autoComplete="given-name" placeholder="Maria" aria-invalid={!!errors.name} />
           </Field>
-          <Field id="employer" label="Employer" hint="Only a hash of this goes on chain." error={errors.employer}>
+          <Field id="employer" label={t("ob_employer")} hint={t("ob_employer_hint")} error={errors.employer}>
             <TextInput id="employer" value={employer} onChange={e => setEmployer(e.target.value)} placeholder="Mdm Tan (+65 9xxx 1234)" aria-invalid={!!errors.employer} />
           </Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <Field id="salary" label="Monthly salary" error={errors.salary}>
+            <Field id="salary" label={t("ob_salary")} error={errors.salary}>
               <MoneyInput id="salary" value={salary} onChange={e => setSalary(e.target.value)} placeholder="600" aria-invalid={!!errors.salary} />
             </Field>
-            <Field id="months" label="Months to start with" hint="Past months you want to record." error={errors.months}>
+            <Field id="months" label={t("ob_months")} hint={t("ob_months_hint")} error={errors.months}>
               <TextInput id="months" type="number" min={1} max={24} value={months} onChange={e => setMonths(e.target.value)} aria-invalid={!!errors.months} />
             </Field>
           </div>
-          <Button type="submit" variant="primary" size="lg" icon={<Icon name="arrow" />}>Create my record</Button>
+          <Button type="submit" variant="primary" size="lg" icon={<Icon name="arrow" />}>{t("ob_create")}</Button>
         </form>
       </div>
       <aside className="app-side">
         <div className="panel panel-pad" style={{ display: "grid", gap: 12 }}>
-          <h3>Just looking?</h3>
-          <p className="small muted">Load a sample record: Maria, nine months at S$600, July unpaid. Everything you do with it is real: signatures, chain records, proofs.</p>
-          <Button onClick={onSample} icon={<Icon name="bank" />}>Load sample record</Button>
+          <h3>{t("ob_sample_title")}</h3>
+          <p className="small muted">{t("ob_sample_text")}</p>
+          <Button onClick={onSample} icon={<Icon name="bank" />}>{t("ob_sample_btn")}</Button>
           <hr className="divider" />
-          <h3>Already have a record?</h3>
-          <p className="small muted">Restore it on this phone with your recovery words. Months, employer answers and proofs are read back from the chain.</p>
-          <Button onClick={onRestore} icon={<Icon name="refresh" />}>Restore from recovery words</Button>
+          <h3>{t("ob_restore_title")}</h3>
+          <p className="small muted">{t("ob_restore_text")}</p>
+          <Button onClick={onRestore} icon={<Icon name="refresh" />}>{t("ob_restore_btn")}</Button>
           <hr className="divider" />
           <ul className="small muted" style={{ paddingLeft: 18, margin: 0, display: "grid", gap: 6 }}>
-            <li>No wallet, gas or seed phrase. The app holds your key.</li>
-            <li>Names and notes stay on this phone. Only hashes and amounts go on chain.</li>
-            <li>Test network only. No money moves.</li>
+            <li>{t("ob_bullet_1")}</li><li>{t("ob_bullet_2")}</li><li>{t("ob_bullet_3")}</li>
           </ul>
         </div>
       </aside>

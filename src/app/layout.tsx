@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ToastProvider } from "@/hooks/useToast";
+import { I18nProvider } from "@/i18n";
 import { Toasts } from "@/components/ui/Toasts";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -19,11 +20,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <ToastProvider>
-          {children}
-          <Toasts />
-          <Analytics />
-        </ToastProvider>
+        <I18nProvider>
+          <ToastProvider>
+            {children}
+            <Toasts />
+            <Analytics />
+          </ToastProvider>
+        </I18nProvider>
       </body>
     </html>
   );
