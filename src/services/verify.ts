@@ -39,9 +39,15 @@ export async function verifyItem(bundle: Bundle, item: BundleItem, schemas: { co
   }
 
   let bankSentence = "";
+  let found = true;
   if (item.proof) {
     const bp = await getAttestation(item.proof.uid);
-    const v = verifyProofJson(item.proof.proofJson, bp ? String(bp.decoded.proofHash) : "", bundle.bankAttestor || undefined);
+    if (!bp) {
+      // Written seconds ago: the indexer has not caught up. Say so, and let the page re-check instead of painting a false red.
+      checks.push({ ok: null, label: "Bank proof not in the index yet", detail: "The proof was recorded moments ago; the index usually catches up within a minute." });
+      found = false;
+    } else {
+    const v = verifyProofJson(item.proof.proofJson, String(bp.decoded.proofHash), bundle.bankAttestor || undefined);
     const refOk = !!bp && bp.refUID.toLowerCase() === item.payEventUID.toLowerCase();
     const all = v.hashOk && v.sigOk && v.attestorOk && refOk;
     const predicate = v.parsed ? describePredicate(v.parsed.predicate, c => sgd(c)) : "";
@@ -52,6 +58,7 @@ export async function verifyItem(bundle: Bundle, item: BundleItem, schemas: { co
       link: bp ? explorerLink(bp.id) : undefined,
     });
     bankSentence = all ? (v.parsed?.satisfied ? `Her bank statement shows ${predicate}.` : "Her bank statement shows a matching credit in that window.") : "The bank proof could not be verified.";
+    }
   }
 
   const month = periodLabel(item.period, true);
@@ -60,5 +67,5 @@ export async function verifyItem(bundle: Bundle, item: BundleItem, schemas: { co
   const sentence = item.status === PAY_STATUS.UNPAID
     ? `${month}: ${who} recorded this month as not paid (${sgd(item.amountCents)}). ${emp} ${bankSentence}`.trim()
     : `${month}: ${who} recorded ${sgd(item.amountCents)} as paid. ${emp}`;
-  return { item, checks, sentence, employerKey: chosen?.attester, found: true };
+  return { item, checks, sentence, employerKey: chosen?.attester, found };
 }
