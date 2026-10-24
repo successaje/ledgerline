@@ -16,7 +16,7 @@ export function DemoLedger() {
         <div key={r.m} className="row" style={{ cursor: "default", background: r.s === "bad" ? "var(--paper-3)" : undefined }}>
           <div>
             <div className="row-title">{r.m}{r.s === "bad" && <Pill tone="bad" dot>Not paid</Pill>}</div>
-            <div className="row-sub"><span className="num">S$600</span><span style={{ color: r.s === "bad" ? "var(--red)" : "var(--green)" }}>· {r.note}</span></div>
+            <div className="row-sub"><span className="num">S$600</span><span style={{ color: r.s === "bad" ? "var(--red)" : "var(--green)" }}>{r.note}</span></div>
           </div>
           <div className="row-right"><Pill tone="ok"><Icon name="lock" size={12} />Recorded</Pill></div>
         </div>
