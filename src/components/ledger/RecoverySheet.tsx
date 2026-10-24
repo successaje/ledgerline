@@ -6,6 +6,7 @@ import { Field, TextInput, MoneyInput } from "@/components/ui/Field";
 import { Notice } from "@/components/ui/Notice";
 import { Icon } from "@/components/ui/Icon";
 import { useToast } from "@/hooks/useToast";
+import { logEvent } from "@/services/analytics";
 
 type Backup = { kind: "phrase" | "key"; secret: string; address: string };
 type Props = {
@@ -35,6 +36,7 @@ export function RecoverySheet({ open, onClose, mode, backup, onRestore }: Props)
     setBusy(true); setErr(null);
     try {
       const n = await onRestore!(secret, { name, employerLabel: employer, salaryCents: cents });
+      logEvent("restore_done", { months: n });
       push({ kind: "success", title: n ? `${n} month${n === 1 ? "" : "s"} restored from the chain` : "Key restored", body: n ? "Employer answers and proofs were restored too." : "No recorded months were found for this key yet." });
       close();
     } catch (ex) {
@@ -49,7 +51,7 @@ export function RecoverySheet({ open, onClose, mode, backup, onRestore }: Props)
         {!revealed ? (
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
             <Notice kind="warn" title="Private">Anyone with these words can sign as you. Do not send them to your employer or agency.</Notice>
-            <Button variant="primary" onClick={() => setRevealed(backup!())} icon={<Icon name="lock" />}>Show my recovery words</Button>
+            <Button variant="primary" onClick={() => { setRevealed(backup!()); logEvent("backup_shown"); }} icon={<Icon name="lock" />}>Show my recovery words</Button>
           </div>
         ) : (
           <div style={{ display: "grid", gap: 12, marginTop: 14 }}>

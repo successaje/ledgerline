@@ -15,6 +15,7 @@ import { SCHEMA_DEFS, explorer } from "@/services/chain";
 import { getOrCreateKey } from "@/services/keys";
 import { useConfig } from "@/hooks/useConfig";
 import { useToast } from "@/hooks/useToast";
+import { logEvent } from "@/services/analytics";
 
 type Done = Record<string, { uid: string; decision: number }>;
 
@@ -50,6 +51,7 @@ function EmployerInner() {
       const n = { ...done, [uid]: { uid: res.uid, decision } };
       setDone(n); try { localStorage.setItem("ll.employer.done", JSON.stringify(n)); } catch {}
       setTimeout(() => setActive(a => (a?.uid === uid ? null : a)), 1200);
+      logEvent("employer_answered", { decision: decision === 1 ? "confirm" : "dispute" });
       push({ kind: "success", title: decision === 1 ? "Confirmed" : "Disputed", body: "Your answer is signed and recorded." });
     } catch (e) {
       setActive(null);

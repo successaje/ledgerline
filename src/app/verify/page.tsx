@@ -12,6 +12,7 @@ import { periodLabel, sgd, shortAddr } from "@/domain/format";
 import { explorer, CHAIN_NAME } from "@/services/chain";
 import { verifyItem, type ItemVerdict } from "@/services/verify";
 import { useConfig } from "@/hooks/useConfig";
+import { logEvent } from "@/services/analytics";
 
 function Verdict({ v }: { v: ItemVerdict }) {
   return (
@@ -56,7 +57,7 @@ function VerifyInner() {
     if (!bundle || bundle === "bad" || !config) return;
     let cancelled = false;
     (async () => {
-      setState("running"); setVerdicts([]);
+      setState("running"); setVerdicts([]); logEvent("verify_opened", { months: bundle.items.length });
       try {
         const out: ItemVerdict[] = [];
         for (const item of bundle.items) {
@@ -64,7 +65,7 @@ function VerifyInner() {
           if (cancelled) return;
           out.push(v); setVerdicts([...out]);
         }
-        setState("done");
+        setState("done"); logEvent("verify_done", { ok: out.every(v => v.checks.every(c => c.ok !== false)) });
       } catch { if (!cancelled) setState("error"); }
     })();
     return () => { cancelled = true; };
