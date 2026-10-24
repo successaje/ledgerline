@@ -12,7 +12,7 @@ export function WorkerShell({ children, demo, onResetDemo, onExitDemo, hideNav }
   const path = usePathname();
   const is = (p: string) => (p === "/app" ? path === "/app" : path.startsWith(p));
   return (
-    <div className="wshell">
+    <div className={`wshell ${demo ? "has-demo" : ""}`}>
       <a href="#main" className="skip-link">{t("nv_skip")}</a>
       <div className="wtop">
         <header className="topbar">

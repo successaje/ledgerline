@@ -97,6 +97,10 @@ npm run dev                       # http://localhost:3000
 | `RECLAIM_APP_ID`, `RECLAIM_APP_SECRET` | Optional; enables zkFetch (method 1). |
 | `NEXT_PUBLIC_BASE_URL` | Public URL, used by zkFetch to reach the statement endpoint. |
 
+## Worker app routes (redesign branch)
+
+`/app` Home paybook · `/app/records` list and `/app/records/[period]` detail · `/app/record` four-stage flow (Month, Payment, Supporting information, Review with payload preview and consent) · `/app/share` explicit month selection · `/app/settings` profile, pay, language, backup check, restore, export · `/app/start` onboarding. Employer responses are Acknowledge / Disagree at `/employer`; shared records are checked at `/verify`. See `docs/REDESIGN_REPORT.md`.
+
 ## Testing
 
 ```bash
@@ -106,6 +110,18 @@ npm run build
 ```
 
 CI runs all three on every push and pull request.
+
+End-to-end (needs a running server on :3000):
+
+```bash
+npx playwright test
+```
+
+Screenshots and vitals at 320 / 375 / 768 / 1440 into `docs/screenshots`:
+
+```bash
+node scripts/screenshots.mjs http://localhost:3000
+```
 
 ## Deployment
 

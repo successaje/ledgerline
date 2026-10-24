@@ -54,6 +54,17 @@ Baseline: `main` at PR #15, 24 Oct 2026. Branch for this work: `redesign/paybook
 | 8 | Demo-only parts | `/bank` and the signed-attestor proof path; the sample ledger. Labelled "Example" or "Demo" in every view that shows them. |
 | 9 | ⚠ Merge and deploy | Not assumed. The branch gets Vercel preview URLs automatically; production stays on `main` until the owner merges. |
 
+## 4a. Status at the end of the branch (24 Oct 2026)
+
+| Phase | Done | Not done |
+|---|---|---|
+| 1 | Partial-payment labels, single response window, verifier outcome taxonomy, trust language, telemetry guard, tests | |
+| 2 | Tokens, components, Home / Records / Settings, landing, onboarding with backup check, paybook, record flow with review and consent, submission state model with reconciliation | Offline queueing of drafts beyond local storage; storage-full handling is a toast, not a recovery flow |
+| 3 | Restore conflict stop, local supersession with earlier versions listed, employer Acknowledge / Disagree with confirmation and deadline, sharing with explicit selection, verifier categories | On-chain `supersedes` (needs decision 2); share preview before copying shows the selection, not a rendering of the verifier page |
+| 4 | Translations for all new strings (machine-drafted, unreviewed), Playwright e2e (6 scenarios), screenshots at 320 / 375 / 768 / 1440, vitals, completion report | 200% zoom pass was done by inspection at 320 px only; no screen-reader run |
+
+See `docs/REDESIGN_REPORT.md` for the file list, test output and measurements.
+
 ## 5. Risks
 
 - The owner may decide against schema v2; then expected/received remain local-only and the review screen must say so (implemented that way by default).

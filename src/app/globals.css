@@ -407,8 +407,11 @@ html[lang="my"] .btn, html[lang="bn"] .btn { line-height: 1.5; }
 @media (min-width: 1024px) { .form-actions { bottom: 0; } }
 
 /* Demo banner */
-.demo-banner { background: var(--amber-2); color: var(--amber); border-bottom: 1px solid color-mix(in srgb, var(--amber) 25%, var(--line)); font-size: var(--fs-sm); line-height: var(--lh-sm); }
-.demo-banner .inner { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 8px var(--sp-4); max-width: var(--w-site); margin: 0 auto; }
+/* Fixed above the bottom navigation so it never shifts the page when it appears after hydration. */
+.demo-banner { position: fixed; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom)); z-index: 29; background: var(--amber-2); color: var(--amber); border-top: 1px solid color-mix(in srgb, var(--amber) 25%, var(--line)); font-size: var(--fs-sm); line-height: var(--lh-sm); }
+.demo-banner .inner { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 6px var(--sp-4); max-width: var(--w-site); margin: 0 auto; }
+.wshell.has-demo .wmain { padding-bottom: calc(var(--sp-16) + 140px); }
+@media (min-width: 1024px) { .demo-banner { bottom: 0; } .wshell.has-demo .wmain { padding-bottom: calc(var(--sp-16) + 56px); } }
 
 /* Masked amounts */
 .masked { letter-spacing: .12em; }

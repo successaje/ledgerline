@@ -6,7 +6,6 @@ import { useLedgerCtx } from "./LedgerContext";
 import { Notice } from "@/components/ui/Notice";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { Pwa } from "@/components/ui/Pwa";
 import { useT } from "@/i18n";
 
@@ -23,12 +22,10 @@ export function Frame({ children, hideNav }: { children: (ctx: ReturnType<typeof
 
   useEffect(() => { if (L.ledger === null && path !== "/app/start") router.replace("/app/start"); }, [L.ledger, path, router]);
 
+  // The ledger loads from this device in the first effect, so the frame is blank for one paint rather than showing a
+  // skeleton that would shift when the demo banner appears above it.
   if (L.ledger === undefined || L.ledger === null) {
-    return (
-      <WorkerShell hideNav>
-        <div className="stack" aria-busy="true"><Skeleton h={28} w={180} /><Skeleton h={160} /><Skeleton h={120} /></div>
-      </WorkerShell>
-    );
+    return <WorkerShell hideNav><div aria-busy="true" style={{ minHeight: 240 }}><span className="sr-only">Loading</span></div></WorkerShell>;
   }
   const ledger = L.ledger;
   const busy = Boolean(L.activity);
