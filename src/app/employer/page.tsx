@@ -17,7 +17,7 @@ import { useConfig } from "@/hooks/useConfig";
 import { useToast } from "@/hooks/useToast";
 import { logEvent } from "@/services/analytics";
 
-type Done = Record<string, { uid: string; decision: number }>;
+type Done = Record<string, { uid: string; decision: number; period?: number; amountCents?: number; workerName?: string; at?: number }>;
 
 function EmployerInner() {
   const sp = useSearchParams();
@@ -48,7 +48,8 @@ function EmployerInner() {
         ],
         onStage: (stage, d) => setActive({ uid, stage, txHash: d?.txHash }),
       });
-      const n = { ...done, [uid]: { uid: res.uid, decision } };
+      const item = req.items.find(i => i.uid === uid);
+      const n = { ...done, [uid]: { uid: res.uid, decision, period: item?.period, amountCents: item?.amountCents, workerName: req.workerName, at: Date.now() } };
       setDone(n); try { localStorage.setItem("ll.employer.done", JSON.stringify(n)); } catch {}
       setTimeout(() => setActive(a => (a?.uid === uid ? null : a)), 1200);
       logEvent("employer_answered", { decision: decision === 1 ? "confirm" : "dispute" });
@@ -61,7 +62,30 @@ function EmployerInner() {
   }
 
   if (req === null) return <Shell><div className="skeleton" style={{ height: 240, borderRadius: 14 }} /></Shell>;
-  if (req === "bad") return <Shell><div className="empty"><h3>This link is incomplete</h3><p>Ask the worker to send the confirmation link again from their Ledgerline app.</p></div></Shell>;
+  if (req === "bad") {
+    const answered = Object.values(done).filter(d => d.period).sort((a, b) => (b.at || 0) - (a.at || 0));
+    return (
+      <Shell nav={<Pill tone="outline">Employer</Pill>}>
+        <div style={{ maxWidth: 560, margin: "0 auto", display: "grid", gap: 16 }}>
+          <div><h1>Employer confirmations</h1><p className="muted" style={{ marginTop: 8 }}>Workers send you a link for each month they record. You confirm or dispute it here; your answer is signed by a key on this phone and becomes part of their record, and your evidence that you paid.</p></div>
+          {answered.length === 0 ? (
+            <div className="empty"><h3>No requests on this phone yet</h3><p>Open the link the worker sent you on WhatsApp. There is nothing to install.</p></div>
+          ) : (
+            <div className="ledger">
+              <div className="ledger-head"><strong>Answered from this phone</strong><Pill tone="outline">{answered.length}</Pill></div>
+              {answered.map(d => (
+                <div key={d.uid} className="row" style={{ cursor: "default" }}>
+                  <div><div className="row-title">{d.period ? periodLabel(d.period) : "Month"}</div><div className="row-sub"><span>{d.workerName}</span>{d.amountCents ? <span className="num">{sgd(d.amountCents)}</span> : null}{d.at ? <span className="faint">{new Date(d.at).toLocaleDateString("en-SG")}</span> : null}</div></div>
+                  <div className="row-right"><Pill tone={d.decision === 1 ? "ok" : "bad"}>{d.decision === 1 ? "Confirmed" : "Disputed"}</Pill><a className="btn btn-ghost btn-sm" href={explorer.attestation(d.uid)} target="_blank" rel="noreferrer" aria-label="View on chain"><Icon name="link" size={14} /></a></div>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="small muted"><a href="/help">How this works</a> · <a href="/privacy">Privacy</a></p>
+        </div>
+      </Shell>
+    );
+  }
 
   const pending = req.items.filter(i => !done[i.uid]);
   return (
@@ -88,7 +112,7 @@ function EmployerInner() {
                   </div>
                 </div>
                 <div className="row-detail" style={{ borderBottom: "1px solid var(--line)" }}>
-                  {a ? <Stages stage={a.stage} txHash={a.txHash} labels={{ preparing: "Preparing your answer", signing: "Signing on this phone", done: "Answer recorded" }} /> : d ? (
+                  {a ? <Stages stage={a.stage} txHash={a.txHash} labels={{ preparing: "Preparing your answer (reading the chain, up to 15 s)", signing: "Signing on this phone", done: "Answer recorded" }} /> : d ? (
                     <div className="small"><a href={explorer.attestation(d.uid)} target="_blank" rel="noreferrer">Your signed answer <Icon name="link" size={12} /></a></div>
                   ) : (
                     <div className="actions" style={{ marginTop: 0 }}>
