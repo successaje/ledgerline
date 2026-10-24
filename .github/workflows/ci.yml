@@ -1,0 +1,20 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SCHEMA_PAYEVENT: "0x727cb593e24f6443adeab5c76f7d32346bee1946f2f655f596df75bd86129e5c"
+          NEXT_PUBLIC_SCHEMA_COUNTERSIGN: "0x41a9799c98f850f33f146251c65f65d2b36be5833dc4936fcd88a0a59dac65c2"
+          NEXT_PUBLIC_SCHEMA_BANKPROOF: "0xf5956e3b0cc6f69c8f93f008b75e7de329b84fdd3bc45db96bee7167bce503df"
