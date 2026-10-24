@@ -31,28 +31,30 @@ Date: 24 Oct 2026, after the hackathon submission. The implementation on `main` 
 
 ## Scorecard (1–10)
 
-| Category | Score | Why it is below 9 |
-|---|---|---|
-| Product clarity | 9 | |
-| UX | 7 | No month editing; no reconciliation after refresh mid-tx; employer page is single-shot |
-| UI | 8 | Consistent system; year grouping and long labels untested at scale |
-| Personalization | 4 | Same view every visit; nothing remembered beyond the ledger |
-| Onboarding | 8 | No pay-window choice; no language |
-| Responsiveness | 8 | Untested on tablet widths between 760 and 960 |
-| Mobile quality | 7 | No install prompt or offline shell; sheets lack focus trap |
-| Performance | 6 | `/app` ships ethers + EAS SDK on first paint (587 kB); nonce reads per action |
-| Loading states | 8 | Verifier shows per-item progress; employer "preparing" can take 15 s with no explanation |
-| Errors | 8 | Good copy; no automatic reconciliation when a tx was mined but the tab closed |
-| Empty states | 8 | Bundle sheet, employer link; activity feed missing |
-| Architecture | 8 | Clean layers; relayer and proof routes need abuse protection |
-| Reliability | 6 | Relayer is an open gas faucet; public RPC nonce reads; indexer lag not retried automatically |
-| Security | 5 | No rate limiting, no schema allow-list on the relayer, no security headers |
-| Documentation | 9 | |
-| Retention | 4 | No reason to return until payday; nothing reminds; nothing summarises |
-| Discoverability | 7 | Settings hidden in a details element; no help or privacy page |
-| Growth | 6 | Employer and verifier pages do not invite the recipient to start their own record |
-| Accessibility | 7 | Sheets do not trap focus; some icon-only buttons; contrast fine |
-| Overall maturity | 7 | |
+Before → after the production pass (PRs #7 to #11).
+
+| Category | Before | After | What remains below 9 |
+|---|---|---|---|
+| Product clarity | 9 | 9 | |
+| UX | 7 | 8 | Real-bank proof still synthetic; employer page has no reminder scheduling |
+| UI | 8 | 8 | Tablet widths 760–960 only lightly reviewed |
+| Personalization | 4 | 7 | No language; no remembered share channel |
+| Onboarding | 8 | 8 | Pay window chosen in settings, not during onboarding |
+| Responsiveness | 8 | 8 | |
+| Mobile quality | 7 | 8 | Offline shell and install prompt added; no push notifications |
+| Performance | 6 | 8 | First load 587 kB → 201 kB; nonce still read per action |
+| Loading states | 8 | 9 | |
+| Errors | 8 | 9 | |
+| Empty states | 8 | 9 | |
+| Architecture | 8 | 8 | Rate limits are per instance |
+| Reliability | 6 | 8 | Indexer retries and reconciliation added; shared rate-limit store pending |
+| Security | 5 | 8 | Off-chain signature pre-check and shared limiter would complete it |
+| Documentation | 9 | 9 | |
+| Retention | 4 | 7 | Reminders need a notification identity (future bet) |
+| Discoverability | 7 | 8 | |
+| Growth | 6 | 7 | No referral or share-to-coworker loop yet |
+| Accessibility | 7 | 8 | Screen-reader pass on the ledger rows pending |
+| Overall maturity | 7 | 8 | |
 
 ## Backlog
 

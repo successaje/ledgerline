@@ -46,12 +46,21 @@ function decode(json: string) {
   return out;
 }
 
-async function gql<T>(query: string, variables: Record<string, unknown>): Promise<T> {
-  const r = await fetch(EAS_GRAPHQL, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, variables }), cache: "no-store" });
-  if (!r.ok) throw new Error(`indexer ${r.status}`);
-  const j = await r.json();
-  if (j.errors) throw new Error(j.errors[0]?.message || "indexer error");
-  return j.data as T;
+async function gql<T>(query: string, variables: Record<string, unknown>, attempt = 0): Promise<T> {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 12_000);
+    const r = await fetch(EAS_GRAPHQL, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query, variables }), cache: "no-store", signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) throw new Error(`indexer ${r.status}`);
+    const j = await r.json();
+    if (j.errors) throw new Error(j.errors[0]?.message || "indexer error");
+    return j.data as T;
+  } catch (e) {
+    // The public indexer occasionally times out or returns 5xx; two quiet retries cover almost all of it.
+    if (attempt < 2) { await new Promise(res => setTimeout(res, 800 * (attempt + 1))); return gql<T>(query, variables, attempt + 1); }
+    throw e;
+  }
 }
 
 const FIELDS = "id attester recipient refUID revoked time schemaId txid decodedDataJson";

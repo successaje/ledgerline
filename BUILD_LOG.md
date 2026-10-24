@@ -17,3 +17,14 @@
 - [x] README complete; demo script; BUIDL text
 - [x] Brand kit, icons and Open Graph (PR #6)
 - [x] Submitted: Tech Track (build 50263) and Idea Track companion Due Process (build 50257)
+
+## Post-submission production pass (24 Oct 2026)
+- [x] Audit, scorecard and backlog (docs/PRODUCT_AUDIT.md)
+- [x] Relayer hardening, security headers, lazy-loaded chain code (PR #7)
+- [x] Returning-user view, chain reconciliation, activity feed, month editing, settings (PR #8)
+- [x] Help and privacy pages, print-ready verifier, recipient loops (PR #9)
+- [x] Product analytics, offline shell, install prompt (PR #10)
+- [x] Focus-trapped sheets, indexer retries, employer inbox, verifier auto-retry (PR #11)
+- [ ] Languages (Tagalog, Bahasa Indonesia, Burmese, Bengali) with native review
+- [ ] Reminders on payday and when an employer answers (opt-in channel needed)
+- [ ] Real bank statement provider via zkTLS
