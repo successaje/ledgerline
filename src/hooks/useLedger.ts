@@ -8,7 +8,8 @@ import { periodWindow, sgd } from "@/domain/format";
 import { SCHEMA_DEFS, getReferencing } from "@/services/chain";
 import { delegatedAttest } from "@/services/attest";
 import { requestBankProof } from "@/services/api";
-import { getOrCreateKey } from "@/services/keys";
+import { getOrCreateKey, exportSecret, importSecret } from "@/services/keys";
+import { rebuildFromChain } from "@/services/recovery";
 import { loadLedger, saveLedger, sampleLedger, clearLedger, upsertRecord, newLedger } from "@/services/ledger-store";
 import { toUserError, type UserError } from "@/services/errors";
 
@@ -43,6 +44,18 @@ export function useLedger(config: AppConfig | null) {
   }, [setLedger]);
 
   const loadSample = useCallback(() => setLedger(sampleLedger()), [setLedger]);
+
+  /** Restores a key from a phrase or raw key and rebuilds the ledger from chain records. */
+  const recover = useCallback(async (secret: string, profile: { name: string; employerLabel: string; salaryCents: number }) => {
+    if (!config) throw new Error("not ready");
+    const w = importSecret("worker", secret);
+    walletRef.current = w;
+    const l = await rebuildFromChain({ address: w.address, schemas: config.schemas, ...profile });
+    setLedger(l);
+    return l.records.length;
+  }, [config, setLedger]);
+
+  const backup = useCallback(() => exportSecret("worker"), []);
   const reset = useCallback(() => setLedger(null), [setLedger]);
 
   const record = useCallback(async (period: number, status: PayStatus, amountCents?: number, note?: string) => {
@@ -148,5 +161,5 @@ export function useLedger(config: AppConfig | null) {
     };
   }, [ledger]);
 
-  return { ledger, address, activity, lastError, syncing, stats, start, loadSample, reset, record, recordAllPending, prove, syncCountersigns, patch, clearError: () => setLastError(null) };
+  return { ledger, address, activity, lastError, syncing, stats, start, loadSample, recover, backup, reset, record, recordAllPending, prove, syncCountersigns, patch, clearError: () => setLastError(null) };
 }

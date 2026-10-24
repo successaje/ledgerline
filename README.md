@@ -2,72 +2,122 @@
 
 **The payslip the employer cannot take back.**
 
-A worker-held, employer-countersigned, bank-proven pay record for migrant domestic workers. Built for the Web3 for Social Good Hackathon 2026 (SMU, GSR Foundation, University of Málaga), Tech Track. Base Sepolia, testnet only, no real funds.
+A worker-held, employer-countersigned, bank-proven pay record for migrant domestic workers. Each month the worker records whether she was paid, signed by a key that lives only on her phone and written to Base through the Ethereum Attestation Service. Her employer confirms from a WhatsApp link. When pay goes missing, she proves it from her own bank statement page without revealing her balance, and shares a bundle that anyone can verify against the chain.
 
-## The problem
+Live: **https://ledgerline-sg.vercel.app** · Built for the Web3 for Social Good Hackathon 2026 (SMU, GSR Foundation, University of Málaga), Tech Track · Base Sepolia, testnet only, no real funds.
 
-Singapore has about 300,000 migrant domestic workers. They are excluded from the itemised-payslip requirement that covers other employees, 45.6% arrive already in debt to recruitment agents (Majurity Trust, 2025), and the Tripartite Alliance for Dispute Management logged 9,848 salary claims in 2024. When pay goes missing, the only evidence is the employer's word and the worker's screenshots. The same failure applies to Gulf construction workers and to the record 6,223 seafarers abandoned in 2025.
+## Problem
 
-The root failure is counterparty capture of records: the person who is harmed cannot prove what the more powerful party knows.
+Singapore has about 300,000 migrant domestic workers. They are excluded from the itemised-payslip requirement that protects other employees; 45.6% arrive already in debt to recruitment agents (Majurity Trust, 2025); the Tripartite Alliance for Dispute Management logged 9,848 salary claims in 2024. When a salary does not arrive, the only evidence is the employer's word and the worker's screenshots. The same failure applies to Gulf construction workers and to the record 6,223 seafarers abandoned in 2025.
 
-## What Ledgerline does
+The root failure is **counterparty capture of records**: the person who is harmed cannot prove what the more powerful party knows.
 
-1. **Worker-held record.** Each payday the worker records paid or not paid. The record is an attestation on Base Sepolia (Ethereum Attestation Service) signed by a key that lives only on her phone. A relayer pays gas; she never sees a wallet, gas or a seed phrase.
-2. **Employer countersign.** She sends a link on WhatsApp. The employer confirms or disputes each month with one tap from a key created silently in their browser. Silence after three days is displayed as evidence, not hidden.
-3. **Bank proof, without revealing the balance.** For an unpaid month she proves, from her own bank statement page, that no salary-sized credit arrived in the pay window. Only the predicate ("no credit of S$600 or more from the employer between 1 and 10 July") and the matching rows are disclosed. Nothing else on the statement leaves her phone.
-4. **Dispute bundle.** She selects the months to disclose and gets a link and QR. A caseworker, mediator or officer opens the verifier, which re-checks every signature and proof against the chain and prints a plain-English summary.
+## Solution
 
-## Why Web3
+| Step | What happens | What goes on chain |
+|---|---|---|
+| Record | Worker marks a month paid or not paid. Signed on the device; a relayer pays gas. | PayEvent attestation, attester = worker's key |
+| Countersign | Employer opens a link, taps Confirm or Dispute. Silence after three days is shown as evidence. | Countersign attestation, attester = employer's key, refUID = the month |
+| Bank proof | For a missing month, "no credit of S$600 or more from the employer between the 1st and the 10th" is proven from the statement page. Only that predicate and the matching rows are disclosed. | BankProof attestation with the hash of the proof |
+| Bundle | Worker selects the months to disclose; a link and QR let a mediator verify everything against the chain and read a plain-English summary. | Nothing new; the verifier reads |
 
-- **No custodian.** Not the employer, not the agency, not an NGO, not us. The record survives a lost phone, a new employer and a new country.
-- **Neutral timestamps.** "Employer did not confirm within three days" is checkable by anyone; it cannot be back-dated by either side.
-- **Selective disclosure.** The bundle contains only the chosen months; the proof contains only the predicate.
-- **Portability.** The same attestations can be read by any verifier in any country, with no integration with the platform that produced them.
+Names, notes and balances never go on chain. Ids are hashes of keys and labels.
 
-## Honesty section: what is real and what is synthetic
+## Why a public chain, not our database
+
+- **No custodian.** Not the employer, not the agency, not an NGO, not us. The record survives a lost phone (with the recovery words), a new employer and a new country.
+- **Neutral timestamps.** "The employer did not confirm within three days" is checkable by anyone and cannot be back-dated by either side.
+- **Selective disclosure.** A bundle contains only the chosen months; a proof contains only the predicate.
+- **Portability.** Any verifier in any country can read the attestations with no integration with the party that produced them.
+
+## What is real and what is synthetic
 
 | Component | Status |
 |---|---|
-| Pay-event, countersign and bank-proof attestations on Base Sepolia | Real. Delegated EAS attestations; the on-chain attester is the worker's or employer's own key. |
-| Worker and employer signatures (EIP-712) | Real. |
-| Verifier re-checking the chain and signatures | Real. |
-| The worker "Maria" and her nine months of pay | Seeded demo data. |
-| The bank | Synthetic. `/bank` is a stand-in for a DBS or POSB statement page. |
-| The bank proof | Two methods, same data shape. Method 1 is a Reclaim zkFetch (zkTLS) proof over the statement endpoint, used when `RECLAIM_APP_ID` and `RECLAIM_APP_SECRET` are set. Method 2 is a signed attestor stand-in: the synthetic bank signs the extracted window. The UI labels which one produced the proof. |
+| Pay-event, countersign and bank-proof attestations on Base Sepolia | Real. Delegated EAS attestations; the on-chain attester is the worker's or employer's own key; the relayer only pays gas. |
+| Worker and employer signatures (EIP-712), transaction stages, verifier | Real. The client watches the transaction and parses the `Attested` event for the UID. |
+| Key backup and restore, rebuild of the ledger from chain | Real. |
+| The worker "Maria" and her nine months of pay | Sample data, one tap away in onboarding. Anything you do with it is a real test-network attestation. |
+| The bank | Synthetic. `/bank` stands in for a DBS or POSB statement page. |
+| The bank proof | Two methods, identical data shape. Method 1: Reclaim zkFetch (zkTLS) over the statement endpoint when `RECLAIM_APP_ID` and `RECLAIM_APP_SECRET` are set. Method 2: the synthetic bank's attestor signs the extracted window. The UI and the verifier label which method produced each proof. |
 
-Production path: replace the synthetic bank with a zkTLS provider for a real statement page (Reclaim's provider builder or TLSNotary MPC mode for sensitive portals), keep the attestation schemas unchanged, and distribute as a MiniPay or WhatsApp-linked web app.
+Production path: replace the synthetic bank with a zkTLS provider for a real statement page (Reclaim's provider builder, or TLSNotary MPC mode for sensitive portals); the schemas, the verifier and the app do not change.
+
+## Architecture
+
+```
+src/
+  app/            Next.js routes: / (landing), /app (worker), /employer, /verify, /bank, /api/*
+  components/
+    ui/           Design system: tokens in globals.css, Button, Pill, Notice, Stages, Sheet, Toasts, Field, Skeleton, Shell
+    ledger/       Onboarding, LedgerList, ShareSheet, BundleSheet, SidePanel, RecoverySheet
+    landing/      DemoLedger (the product's key screen, rendered statically)
+  hooks/          useLedger (all worker behaviour), useConfig, useToast
+  services/       chain (constants + EAS indexer client), attest (delegated attestation with stages), keys (device keys, backup, restore),
+                  recovery (rebuild from chain), ledger-store (local-first state), verify (bundle verification), errors (user-facing messages), api
+  server/         relayer (RPC fallback, serialised sends), proof (zkFetch or signed attestor), bank-data (synthetic statement)
+  domain/         types, format, ids, bundle codec, proof verification (pure; unit-tested)
+scripts/          register-schemas.cjs (idempotent schema registration)
+docs/PRODUCT.md   product model; BUILD_LOG.md; SCHEMAS.md
+```
+
+Flow of a record: `useLedger.record` → `services/attest.delegatedAttest` (encode, sign EIP-712 with the device key) → `POST /api/attest` → `server/relayer.submitDelegatedAttestation` (returns the tx hash immediately) → client waits for the receipt, parses `Attested`, stores the UID locally. Stages shown: Preparing → Signing on this device → Sending to Base → Confirming on chain → Recorded.
+
+## Sponsor and ecosystem technology
+
+- **Ethereum Attestation Service on Base Sepolia.** Three schemas (see [SCHEMAS.md](SCHEMAS.md)). Delegated attestations (`attestByDelegation`) so the attester is the person, not the server. Indexed by the EAS GraphQL API for the verifier and for recovery.
+- **Reclaim zkFetch (optional).** zkTLS proof over the statement endpoint; enabled by credentials, otherwise an honest signed-attestor stand-in with the same shape.
+- No token, no governance, no custody.
 
 ## Chain details
 
-- Network: Base Sepolia (chain id 84532)
-- EAS: `0x4200000000000000000000000000000000000021`, Schema Registry: `0x4200000000000000000000000000000000000020`
-- Schemas (registered by `npm run schemas`):
-  - PayEvent: `bytes32 workerId, bytes32 employerId, uint32 period, uint256 amountCents, uint8 status, bytes32 detailHash`
-  - Countersign: `bytes32 payEventUID, uint8 decision, bytes32 noteHash` (refUID = the pay event)
-  - BankProof: `bytes32 payEventUID, bytes32 predicateHash, bytes32 proofHash, uint8 method, bool satisfied` (refUID = the pay event)
-- Schema UIDs: see `SCHEMAS.md` (written after registration).
-- No personal data on chain: worker and employer ids are hashes of keys or labels; names and notes live only in the worker's device and the bundle she chooses to share.
+- Network: Base Sepolia (chain id 84532). EAS `0x4200000000000000000000000000000000000021`, Schema Registry `0x4200000000000000000000000000000000000020`.
+- PayEvent `0x727cb593e24f6443adeab5c76f7d32346bee1946f2f655f596df75bd86129e5c` · Countersign `0x41a9799c98f850f33f146251c65f65d2b36be5833dc4936fcd88a0a59dac65c2` · BankProof `0xf5956e3b0cc6f69c8f93f008b75e7de329b84fdd3bc45db96bee7167bce503df`
+- Relayer (gas only) `0x58C90453b6cdEc0aC348C4D6ef4a3470E63aC7fb` · Synthetic bank attestor `0x511f493a74505E7420E9850E3E4978110D072379`
 
-## Run it
+## Local development
 
 ```bash
-cp .env.example .env.local   # fill RELAYER_PRIVATE_KEY (funded on Base Sepolia) and BANK_ATTESTOR_PRIVATE_KEY
+cp .env.example .env.local        # fill RELAYER_PRIVATE_KEY (funded on Base Sepolia) and BANK_ATTESTOR_PRIVATE_KEY
 npm install
-npm run schemas              # registers the three schemas, writes schemas.env; copy into .env.local
-npm run dev
+npm run schemas                   # idempotent; writes schemas.env, copy the three UIDs into .env.local
+npm run dev                       # http://localhost:3000
 ```
 
-Pages: `/` worker, `/employer?c=…` employer countersign (link generated in the app), `/bank` synthetic bank, `/verify?b=…` verifier (link generated by "Build dispute bundle").
+| Variable | Purpose |
+|---|---|
+| `RPC_URL`, `NEXT_PUBLIC_RPC_URL` | Base Sepolia RPC (server and client). The relayer falls back to public RPCs. |
+| `RELAYER_PRIVATE_KEY` | Pays gas for delegated attestations. Testnet only. |
+| `BANK_ATTESTOR_PRIVATE_KEY`, `NEXT_PUBLIC_BANK_ATTESTOR_ADDRESS` | Signs statement-window proofs (method 2). |
+| `NEXT_PUBLIC_SCHEMA_PAYEVENT`, `_COUNTERSIGN`, `_BANKPROOF` | Schema UIDs. |
+| `RECLAIM_APP_ID`, `RECLAIM_APP_SECRET` | Optional; enables zkFetch (method 1). |
+| `NEXT_PUBLIC_BASE_URL` | Public URL, used by zkFetch to reach the statement endpoint. |
+
+## Testing
+
+```bash
+npm run typecheck
+npm test            # vitest: bundle codec, proof verification, formatting, synthetic statement
+npm run build
+```
+
+CI runs all three on every push and pull request.
+
+## Deployment
+
+Vercel, from `main`. Set the variables above in the project; `maxDuration` is 60 s for the relayer route. Production: https://ledgerline-sg.vercel.app
 
 ## Demo path
 
-1. Open `/`. Maria has nine months; July is red. Tap "Record all unsigned months".
-2. Tap "Ask employer to confirm", open the link as the employer, confirm January to June and August to September, leave July.
-3. Back on the worker page, "Check employer confirmations". July shows "Awaiting employer"; enable "3 days have passed" in Demo controls to show "Employer did not confirm".
-4. On July, tap "Prove from my bank". In a few seconds: "No credit of S$600 or more from the employer between 2026-07-01 and 2026-07-10." The balance is never shown.
-5. "Build dispute bundle", select July, open the verifier: worker signature green, employer silent red, bank proof green, and the plain-English summary.
+1. Open `/app`, tap **Load sample record**. Nine months, July red.
+2. **Record 9 draft months**; watch each go Preparing → Signing → Sending → Confirming → Recorded.
+3. **Ask employer to confirm** → open the link as the employer → Confirm every month except July.
+4. Back in the app, **Check for confirmations**. July stays unanswered; tick "treat the employer window as elapsed" to show the three-day rule.
+5. Open July, **Prove from my bank**. "No credit of S$600 or more from the employer between 2026-07-01 and 2026-07-10." The balance never appears.
+6. **Build dispute bundle** → July → open the verifier: green, red, green, and a sentence a mediator can read in ten seconds.
+7. **Back up my key** → **Clear this record** → **Restore from recovery words**: the months, answers and proofs come back from the chain.
 
-## Roadmap (not built in the hackathon)
+## Roadmap
 
 Real bank providers via zkTLS; MiniPay distribution; recruitment-fee receipts; seafarer and Gulf modes; an attested legal-aid assistant that reads the worker's own record; "fair employer" reputation from countersign history; a pilot with a Singapore NGO and 50 workers funded by the incubation grant.
 

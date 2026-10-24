@@ -12,6 +12,7 @@ import { LedgerList } from "@/components/ledger/LedgerList";
 import { ShareSheet } from "@/components/ledger/ShareSheet";
 import { BundleSheet } from "@/components/ledger/BundleSheet";
 import { SidePanel } from "@/components/ledger/SidePanel";
+import { RecoverySheet } from "@/components/ledger/RecoverySheet";
 import { useConfig } from "@/hooks/useConfig";
 import { useLedger } from "@/hooks/useLedger";
 import { useToast } from "@/hooks/useToast";
@@ -29,7 +30,7 @@ function AppInner() {
   const { push } = useToast();
   const [employerUrl, setEmployerUrl] = useState<string | null>(null);
   const [bundleUrl, setBundleUrl] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<"employer" | "pick" | "bundle" | null>(null);
+  const [sheet, setSheet] = useState<"employer" | "pick" | "bundle" | "backup" | "restore" | null>(null);
   const [ff, setFf] = useState(false);
   useEffect(() => { try { setFf(localStorage.getItem("ll.demo.ff") === "1"); } catch {} }, []);
   const setFastForward = (v: boolean) => { setFf(v); try { localStorage.setItem("ll.demo.ff", v ? "1" : "0"); } catch {} };
@@ -80,7 +81,7 @@ function AppInner() {
   }
 
   if (!L.ledger) {
-    return <Shell wide nav={nav}>{cfgError && <div style={{ marginBottom: 16 }}><Notice kind="error" title="Cannot reach the server">{cfgError}</Notice></div>}<Onboarding onStart={L.start} onSample={L.loadSample} /></Shell>;
+    return <Shell wide nav={nav}>{cfgError && <div style={{ marginBottom: 16 }}><Notice kind="error" title="Cannot reach the server">{cfgError}</Notice></div>}<Onboarding onStart={L.start} onSample={L.loadSample} onRestore={() => setSheet("restore")} /><RecoverySheet open={sheet === "restore"} onClose={() => setSheet(null)} mode="restore" onRestore={L.recover} /></Shell>;
   }
 
   return (
@@ -96,7 +97,7 @@ function AppInner() {
           <SidePanel ledger={L.ledger} address={L.address} stats={L.stats} syncing={L.syncing} busy={busy || !ready}
             fastForward={ff} onFastForward={setFastForward}
             onRecordAll={() => L.recordAllPending().catch(() => {})} onSync={sync} onAskEmployer={askEmployer} onBundle={() => setSheet("pick")}
-            onReset={() => { if (confirm("Clear this record from this device? On-chain records remain and can be re-synced with the same key.")) L.reset(); }} />
+            onReset={() => { if (confirm("Clear this record from this device? On-chain records remain and can be restored with your recovery words.")) L.reset(); }} onBackup={() => setSheet("backup")} />
         </div>
       </div>
 
@@ -108,6 +109,7 @@ function AppInner() {
       <ShareSheet open={sheet === "employer"} onClose={() => setSheet(null)} title="Ask your employer to confirm" url={employerUrl}
         intro="Send this link. Your employer confirms or disputes each month with one tap, from any phone, with no app or account. Their answer is signed and recorded next to your month."
         whatsappText="Please confirm my salary record:" openLabel="Open as the employer" />
+      <RecoverySheet open={sheet === "backup"} onClose={() => setSheet(null)} mode="backup" backup={L.backup} />
       <BundleSheet open={sheet === "pick"} onClose={() => setSheet(null)} ledger={L.ledger} onCreate={createBundle} />
       <ShareSheet open={sheet === "bundle"} onClose={() => setSheet(null)} title="Your dispute bundle" url={bundleUrl}
         intro="Anyone with this link can verify the selected months against the chain: your signature, the employer's answer or silence, and the bank proof. Nothing else about you is revealed."
