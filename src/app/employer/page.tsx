@@ -12,7 +12,6 @@ import { decodeEmployerRequest, type EmployerRequest } from "@/domain/bundle";
 import { DECISION, PAY_STATUS, type TxStage } from "@/domain/types";
 import { periodLabel, sgd, shortAddr } from "@/domain/format";
 import { SCHEMA_DEFS, explorer } from "@/services/chain";
-import { delegatedAttest } from "@/services/attest";
 import { getOrCreateKey } from "@/services/keys";
 import { useConfig } from "@/hooks/useConfig";
 import { useToast } from "@/hooks/useToast";
@@ -38,6 +37,7 @@ function EmployerInner() {
   async function decide(uid: string, decision: 1 | 2) {
     if (!config || req === null || req === "bad") return;
     try {
+      const { delegatedAttest } = await import("@/services/attest");
       const res = await delegatedAttest({
         schemaUID: config.schemas.countersign, schemaString: SCHEMA_DEFS.countersign, signer: getOrCreateKey("employer"), refUID: uid, recipient: req.worker,
         fields: [

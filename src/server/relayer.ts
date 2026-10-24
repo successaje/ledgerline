@@ -10,8 +10,15 @@ import { EAS_ADDRESS } from "@/services/chain";
 const RPCS = [process.env.RPC_URL || "", "https://sepolia.base.org", "https://base-sepolia-rpc.publicnode.com", "https://base-sepolia.gateway.tenderly.co"].filter(Boolean);
 
 export class RelayerError extends Error {
-  constructor(public code: "relayer-config" | "relayer-gas" | "rpc-unavailable" | "bad-request" | "chain-rejected", message: string) { super(message); }
+  constructor(public code: "relayer-config" | "relayer-gas" | "rpc-unavailable" | "bad-request" | "chain-rejected" | "rate-limited", message: string) { super(message); }
 }
+
+/** Only Ledgerline's own schemas may be relayed; anything else is someone else's gas bill. */
+export function allowedSchemas(): Set<string> {
+  return new Set([process.env.NEXT_PUBLIC_SCHEMA_PAYEVENT, process.env.NEXT_PUBLIC_SCHEMA_COUNTERSIGN, process.env.NEXT_PUBLIC_SCHEMA_BANKPROOF].filter(Boolean).map(s => s!.toLowerCase()));
+}
+
+const MAX_DATA_BYTES = 2048; // our largest schema encodes to 192 bytes; leave room, refuse blobs
 
 export type DelegatedAttestRequest = {
   schema: string; attester: string; recipient?: string; refUID?: string; data: string;
@@ -56,8 +63,18 @@ export async function relayerBalance(): Promise<bigint | null> {
 export async function submitDelegatedAttestation(req: DelegatedAttestRequest): Promise<{ txHash: string }> {
   const pk = process.env.RELAYER_PRIVATE_KEY;
   if (!pk) throw new RelayerError("relayer-config", "RELAYER_PRIVATE_KEY is not set");
-  if (!/^0x[0-9a-fA-F]{64}$/.test(req.schema) || !ethers.isAddress(req.attester) || !req.data?.startsWith("0x"))
+  if (!/^0x[0-9a-fA-F]{64}$/.test(req.schema) || !ethers.isAddress(req.attester) || !/^0x[0-9a-fA-F]*$/.test(req.data || ""))
     throw new RelayerError("bad-request", "Malformed attestation request");
+  if (!allowedSchemas().has(req.schema.toLowerCase())) throw new RelayerError("bad-request", "Schema is not relayed by this service");
+  if ((req.data.length - 2) / 2 > MAX_DATA_BYTES) throw new RelayerError("bad-request", "Attestation data too large");
+  if (req.refUID && !/^0x[0-9a-fA-F]{64}$/.test(req.refUID)) throw new RelayerError("bad-request", "Malformed refUID");
+  if (req.recipient && !ethers.isAddress(req.recipient)) throw new RelayerError("bad-request", "Malformed recipient");
+  const deadline = Number(req.deadline);
+  if (!Number.isFinite(deadline) || deadline < Math.floor(Date.now() / 1000) || deadline > Math.floor(Date.now() / 1000) + 86_400)
+    throw new RelayerError("bad-request", "Signature deadline must be within the next 24 hours");
+  const sig = req.signature;
+  if (!sig || ![27, 28].includes(Number(sig.v)) || !/^0x[0-9a-fA-F]{64}$/.test(sig.r) || !/^0x[0-9a-fA-F]{64}$/.test(sig.s))
+    throw new RelayerError("bad-request", "Malformed signature");
 
   return serial(async () => {
     const provider = await firstHealthyProvider();
