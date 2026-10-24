@@ -100,6 +100,11 @@ function AppInner() {
         </div>
       </div>
 
+      <div className="actionbar mobile-only">
+        <Button block disabled={busy || !ready || L.stats.recorded === 0} onClick={askEmployer} icon={<Icon name="whatsapp" />}>Ask employer</Button>
+        <Button variant="accent" block disabled={busy || !ready || L.stats.recorded === 0} onClick={() => setSheet("pick")} icon={<Icon name="shield" />}>Dispute bundle</Button>
+      </div>
+
       <ShareSheet open={sheet === "employer"} onClose={() => setSheet(null)} title="Ask your employer to confirm" url={employerUrl}
         intro="Send this link. Your employer confirms or disputes each month with one tap, from any phone, with no app or account. Their answer is signed and recorded next to your month."
         whatsappText="Please confirm my salary record:" openLabel="Open as the employer" />

@@ -55,12 +55,12 @@ export function LedgerList({ ledger, activity, fastForward, busy, onRecord, onPr
                 <div className="row-title">{periodLabel(r.period)}{unpaid && <Pill tone="bad" dot>Not paid</Pill>}</div>
                 <div className="row-sub">
                   <span className="num">{sgd(r.amountCents)}</span>
-                  {!r.payEventUID && <span className="faint">· not recorded yet</span>}
-                  {es === "confirmed" && <span style={{ color: "var(--green)" }}>· employer confirmed</span>}
-                  {es === "disputed" && <span style={{ color: "var(--red)" }}>· employer disputed</span>}
-                  {es === "waiting" && <span className="faint">· waiting for employer</span>}
-                  {es === "silent" && <span style={{ color: "var(--red)" }}>· employer did not confirm</span>}
-                  {r.proof && <span style={{ color: "var(--green)" }}>· bank proof</span>}
+                  {!r.payEventUID && <span className="faint">not recorded yet</span>}
+                  {es === "confirmed" && <span style={{ color: "var(--green)" }}>employer confirmed</span>}
+                  {es === "disputed" && <span style={{ color: "var(--red)" }}>employer disputed</span>}
+                  {es === "waiting" && <span className="faint">waiting for employer</span>}
+                  {es === "silent" && <span style={{ color: "var(--red)" }}>employer did not confirm</span>}
+                  {r.proof && <span style={{ color: "var(--green)" }}>bank proof</span>}
                 </div>
               </div>
               <div className="row-right">
