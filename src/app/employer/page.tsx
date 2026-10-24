@@ -100,6 +100,13 @@ function EmployerInner() {
           })}
         </div>
         {pending.length === 0 && <Notice kind="ok" title="All done">Every month in this request has your answer. You can close this page.</Notice>}
+        {pending.length === 0 && (
+          <div className="panel panel-pad" style={{ display: "grid", gap: 8 }}>
+            <strong>Your answers are now part of {req.workerName}'s record</strong>
+            <p className="small muted">Each one is signed by the key on this phone and can be verified by anyone, which also protects you: a confirmed month is evidence that you paid. Employers, agencies and workers all use the same free tool.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}><a className="btn" href="/help">How this works</a><a className="btn btn-ghost" href="/">About Ledgerline</a></div>
+          </div>
+        )}
         <p className="xs faint">Signing key on this phone: <span className="mono">{shortAddr(addr, 8)}</span>. Test network; no money moves.</p>
       </div>
     </Shell>

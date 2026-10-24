@@ -88,12 +88,26 @@ function VerifyInner() {
         {verdicts.map((v, i) => <Verdict key={i} v={v} />)}
         {state === "done" && !allFound && <Notice kind="warn" title="Some records are not indexed yet" action={<Button size="sm" onClick={() => setRunId(r => r + 1)} icon={<Icon name="refresh" size={14} />}>Check again</Button>}>Records reach the index about a minute after they are written.</Notice>}
         {state === "done" && (
+          <div className="no-print" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Button variant="primary" onClick={() => window.print()} icon={<Icon name="share" />}>Save as PDF or print</Button>
+            <Button onClick={async () => { try { await navigator.clipboard.writeText(window.location.href); } catch {} }} icon={<Icon name="copy" />}>Copy link</Button>
+          </div>
+        )}
+        {state === "done" && (
           <div className="panel panel-pad small muted" style={{ display: "grid", gap: 6 }}>
             <strong style={{ color: "var(--ink)" }}>What was checked</strong>
             <span>Each month is an attestation on {CHAIN_NAME} signed by the worker's key <span className="mono">{shortAddr(bundle.worker.address, 8)}</span>.</span>
             <span>Employer answers are separate attestations that reference the month{employerKeys.length ? <>, signed by <span className="mono">{employerKeys.map(k => shortAddr(k)).join(", ")}</span></> : ""}.</span>
             <span>Bank proofs are hashed on chain; this page recomputes the hash and checks the attestor signature{bundle.bankAttestor ? <> (<span className="mono">{shortAddr(bundle.bankAttestor)}</span>)</> : ""}.</span>
             <span>Months outside this bundle were not disclosed. No names or balances are on chain.</span>
+            <span className="print-only">Verified at {new Date().toLocaleString("en-SG")} · ledgerline-sg.vercel.app/verify</span>
+          </div>
+        )}
+        {state === "done" && (
+          <div className="panel panel-pad no-print" style={{ display: "grid", gap: 8 }}>
+            <strong>Keep your own pay record</strong>
+            <p className="small muted">Ledgerline is free. Record each payday on your phone, have your employer confirm from a link, and prove a missing month from your bank without showing your balance.</p>
+            <a className="btn btn-primary" href="/app" style={{ justifySelf: "start" }}>Start my record</a>
           </div>
         )}
       </div>
