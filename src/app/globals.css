@@ -249,6 +249,41 @@ td.r, th.r { text-align: right; }
 /* Side-panel stats: two columns so labels never clip */
 .app-side .stats { grid-template-columns: repeat(2, 1fr); }
 .stat .k { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row-sub > span + span::before { content: "·"; margin-right: 6px; color: var(--ink-3); }
 .mobile-only { display: flex; }
 @media (min-width: 960px) { .mobile-only { display: none; } }
+
+/* Today panel */
+.today { display: grid; gap: 8px; }
+.today-news { padding: 12px 14px; border-radius: var(--r-lg); background: var(--green-2); border: 1px solid color-mix(in srgb, var(--green) 25%, var(--line)); }
+.today-item { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: var(--r-lg); background: var(--paper-2); border: 1px solid var(--line); box-shadow: var(--shadow-1); }
+.today-title { font-weight: 600; }
+.today-actions { display: flex; gap: 8px; }
+.today-list { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 2px; font-size: var(--fs-sm); }
+.linklike { background: none; border: 0; padding: 0; color: inherit; text-align: left; cursor: pointer; font: inherit; }
+.linklike:hover { text-decoration: underline; }
+
+/* Activity */
+.activity { list-style: none; margin: 0; padding: 0; display: grid; }
+.activity-item { display: grid; grid-template-columns: 22px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); align-items: start; }
+.activity-item:last-child { border-bottom: 0; }
+.activity-icon { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; color: #fff; margin-top: 1px; }
+.activity-icon.ok { background: var(--green); } .activity-icon.bad { background: var(--red); }
+
+/* Segmented control */
+.segment { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: var(--r-md); background: var(--paper-3); }
+.segment-btn { border: 0; background: transparent; border-radius: 8px; padding: 9px 6px; font-size: var(--fs-sm); font-weight: 560; cursor: pointer; color: var(--ink-2); transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
+.segment-btn.on { background: var(--paper-2); box-shadow: var(--shadow-1); color: var(--ink); }
+.segment-btn.on.ok { color: var(--green); } .segment-btn.on.bad { color: var(--red); } .segment-btn.on.warn { color: var(--amber); }
+
+/* Year headers in the ledger */
+.year-head { padding: 8px 16px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); background: var(--paper-3); border-bottom: 1px solid var(--line); }
+
+/* Print: the verifier is the artefact that leaves the app */
+@media print {
+  .topbar, .actionbar, .btn, .toasts, .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+  .panel, .ledger { box-shadow: none; border-color: #bbb; break-inside: avoid; }
+  .summary { background: #f2f2f2; color: #000; border: 1px solid #bbb; }
+  .main { padding: 0; }
+  a[href]::after { content: ""; }
+}

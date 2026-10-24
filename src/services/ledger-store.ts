@@ -12,9 +12,21 @@ const KEY = "ll.ledger.v1";
 export function loadLedger(): Ledger | null {
   try {
     const s = window.localStorage.getItem(KEY);
-    if (s) return JSON.parse(s) as Ledger;
-    return migrateLegacyState();
+    if (s) return normalise(JSON.parse(s) as Ledger);
+    const legacy = migrateLegacyState();
+    return legacy ? normalise(legacy) : null;
   } catch { return null; }
+}
+
+/** Fills in fields added after a ledger was first saved, so older local data keeps working. */
+export function normalise(l: Ledger): Ledger {
+  const profile: Profile = { ...l.profile, confirmWindowDays: l.profile.confirmWindowDays ?? 3, payWindow: l.profile.payWindow || { fromDay: 1, toDay: 10 } };
+  const meta = l.meta || { createdAt: Math.min(Date.now(), ...l.records.map(r => r.signedAt || Date.now())) };
+  return { profile, records: [...l.records].sort((a, b) => a.period - b.period), meta };
+}
+
+export function exportLedger(l: Ledger): string {
+  return JSON.stringify({ exportedAt: new Date().toISOString(), app: "ledgerline", version: 1, ...l }, null, 2);
 }
 
 /** Pre-release builds kept a flat worker state. Convert it once so recorded months are not orphaned. */
@@ -25,8 +37,9 @@ function migrateLegacyState(): Ledger | null {
     const old = JSON.parse(raw) as { name: string; employerLabel: string; employerId: string; records: (PayRecord & { proof?: PayRecord["proof"] & { window?: { from: string; to: string } } })[] };
     const salary = old.records[0]?.amountCents || 0;
     const l: Ledger = {
-      profile: { name: old.name, employerLabel: old.employerLabel, employerId: old.employerId, salaryCents: salary, payWindow: { fromDay: 1, toDay: 10 }, sample: old.name === "Maria" },
+      profile: { name: old.name, employerLabel: old.employerLabel, employerId: old.employerId, salaryCents: salary, payWindow: { fromDay: 1, toDay: 10 }, confirmWindowDays: 3, sample: old.name === "Maria" },
       records: old.records.map(r => ({ ...r, proof: r.proof ? { ...r.proof, window: r.proof.window || { from: "", to: "" } } : undefined })),
+      meta: { createdAt: Date.now() },
     };
     saveLedger(l);
     window.localStorage.removeItem("ll.worker.state");
@@ -49,12 +62,13 @@ export function newLedger(input: { name: string; employerLabel: string; salaryCe
     employerId: idFromLabel(input.employerLabel),
     salaryCents: input.salaryCents,
     payWindow: { fromDay: 1, toDay: 10 },
+    confirmWindowDays: 3,
   };
   const records: PayRecord[] = [];
   for (let p = input.startPeriod; p <= input.endPeriod; p = p % 100 === 12 ? (Math.floor(p / 100) + 1) * 100 + 1 : p + 1) {
     records.push({ period: p, amountCents: input.salaryCents, status: PAY_STATUS.PAID });
   }
-  return { profile, records };
+  return { profile, records, meta: { createdAt: Date.now() } };
 }
 
 /** The sample ledger used for evaluation: Maria, nine months at S$600, July unpaid. */

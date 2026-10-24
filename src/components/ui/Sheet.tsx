@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Icon } from "./Icon";
 
 /** Bottom sheet on phones, centred dialog on larger screens. */
@@ -12,10 +12,13 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
     document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
   }, [open, onClose]);
+  const pressedOnBackdrop = useRef(false);
   if (!open) return null;
   return (
     <>
-      <div className="sheet-backdrop" onClick={onClose} aria-hidden />
+      <div className="sheet-backdrop" aria-hidden
+        onMouseDown={() => { pressedOnBackdrop.current = true; }}
+        onClick={() => { if (pressedOnBackdrop.current) onClose(); pressedOnBackdrop.current = false; }} />
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-handle" aria-hidden />
         <div className="sheet-head">
