@@ -1,72 +1,72 @@
+"use client";
 import Link from "next/link";
 import { Shell } from "@/components/ui/Shell";
 import { LinkButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Pill } from "@/components/ui/Pill";
-import { DemoLedger } from "@/components/landing/DemoLedger";
+import { CHAIN_NAME } from "@/services/chain";
+import { LanguageSwitch, useT } from "@/i18n";
 
 export default function Landing() {
+  const { t } = useT();
   return (
-    <Shell nav={<><Link className="btn btn-ghost btn-sm" href="/verify">Verifier</Link><Link className="btn btn-primary btn-sm" href="/app">Open the app</Link></>}>
+    <Shell nav={<><LanguageSwitch /><Link className="btn btn-ghost btn-sm hide-sm" href="/verify">{t("ld_verifier")}</Link><Link className="btn btn-primary btn-sm" href="/app">{t("nv_records")}</Link></>}>
       <div className="container site" style={{ padding: 0 }}>
         <section className="hero grid-2">
           <div>
-            <Pill tone="outline">For migrant domestic workers · Singapore first</Pill>
-            <h1 style={{ marginTop: 14 }}>The payslip the employer cannot take back.</h1>
-            <p className="lede">Every month, mark whether you were paid. Your employer confirms from a link. When pay goes missing, prove it from your own bank page without showing your balance. The record is yours: no agency, employer or app can rewrite it.</p>
+            <span className="env-label" title={t("nv_env_title", { chain: CHAIN_NAME })}>{t("nv_env")} · {CHAIN_NAME}</span>
+            <h1 style={{ marginTop: 14 }}>{t("ld_title")}</h1>
+            <p className="lede">{t("ld_lede")}</p>
             <div className="cta">
-              <LinkButton variant="primary" size="lg" href="/app" icon={<Icon name="arrow" />}>Start your record</LinkButton>
-              <LinkButton size="lg" href="/app?sample=1">Try the sample</LinkButton>
+              <LinkButton variant="primary" size="lg" href="/app/start" icon={<Icon name="arrow" />}>{t("ld_start")}</LinkButton>
+              <LinkButton size="lg" href="/app?sample=1">{t("ld_sample")}</LinkButton>
+              <LinkButton size="lg" variant="ghost" href="/app/start?mode=restore">{t("ld_restore")}</LinkButton>
             </div>
-            <p className="xs faint" style={{ marginTop: 14 }}>Free. No wallet, gas or seed phrase. Test network for now; no money moves.</p>
+            <p className="small muted" style={{ marginTop: 14 }}>{t("ld_foot_test")}</p>
           </div>
-          <DemoLedger />
-        </section>
-
-        <section className="section">
-          <h2>Pay goes missing, and the only evidence is the employer's word.</h2>
-          <p className="sub">Singapore's domestic workers are excluded from the itemised-payslip rule that protects other employees. When a salary does not arrive, they have screenshots and a WhatsApp thread.</p>
-          <div className="grid-3" style={{ marginTop: 24 }}>
-            <div className="fact"><div className="v num">~300,000</div><div className="k">migrant domestic workers in Singapore</div></div>
-            <div className="fact"><div className="v num">9,848</div><div className="k">salary claims filed at TADM in 2024</div></div>
-            <div className="fact"><div className="v num">45.6%</div><div className="k">arrive already in debt to recruitment agents (Majurity Trust, 2025)</div></div>
+          <div className="paybook" aria-label={t("ld_example_title")}>
+            <div className="paybook-head"><div><div className="small muted">{t("ld_example_title")}</div><div className="paybook-month">July 2026</div></div><Pill tone="warn"><Icon name="alert" size={14} />{t("ld_partly")}</Pill></div>
+            <div className="paybook-grid">
+              <div className="paybook-cell"><div className="k">{t("ld_expected")}</div><div className="v">S$700</div></div>
+              <div className="paybook-cell"><div className="k">{t("ld_received")}</div><div className="v">S$500</div></div>
+              <div className="paybook-cell"><div className="k">{t("ld_difference")}</div><div className="v diff-pos">S$200</div><div className="note">{t("ld_short", { amount: "S$200" })}</div></div>
+            </div>
+            <p className="small muted" style={{ marginTop: 14 }}>{t("nv_demo")}</p>
           </div>
         </section>
 
-        <section className="section">
-          <h2>How it works</h2>
-          <div className="grid-3" style={{ marginTop: 24 }}>
-            <div className="step"><div className="n">1</div><div><h3>Record each payday</h3><p>Paid or not paid, signed by a key that lives only on your phone, written to the Base network. You never see a wallet.</p></div></div>
-            <div className="step"><div className="n">2</div><div><h3>Employer confirms from a link</h3><p>One tap on WhatsApp. Their answer is signed next to your month. Silence after three days is recorded too.</p></div></div>
-            <div className="step"><div className="n">3</div><div><h3>Prove it from your bank</h3><p>For a missing month, prove "no salary-sized credit arrived in the pay window" from your own statement page. Nothing else is disclosed.</p></div></div>
+        <section className="section grid-2" style={{ alignItems: "start" }}>
+          <div className="card">
+            <h2 style={{ fontSize: "var(--fs-xl)" }}>{t("ld_is_title")}</h2>
+            <ul className="bullets" style={{ marginTop: 12 }}>
+              <li><Icon name="check" /><span>{t("ld_is_1")}</span></li>
+              <li><Icon name="check" /><span>{t("ld_is_2")}</span></li>
+              <li><Icon name="check" /><span>{t("ld_is_3")}</span></li>
+            </ul>
           </div>
-        </section>
-
-        <section className="section grid-2">
-          <div>
-            <h2>A bundle anyone can check, without trusting us.</h2>
-            <p className="sub">Choose the months to disclose. The verifier re-checks every signature and proof against the chain and writes a plain-English summary a mediator can read in ten seconds.</p>
-            <div className="cta"><LinkButton href="/verify" icon={<Icon name="shield" />}>Open the verifier</LinkButton></div>
-          </div>
-          <div className="panel panel-pad">
-            <div className="summary">July 2026: Maria recorded this month as not paid (S$600). The employer did not confirm it within the window. Her bank statement shows no credit of S$600 or more from TAN between 2026-07-01 and 2026-07-10.</div>
-            <p className="xs faint" style={{ marginTop: 10 }}>Example verifier summary for a one-month bundle.</p>
+          <div className="card">
+            <h2 style={{ fontSize: "var(--fs-xl)" }}>{t("ld_isnt_title")}</h2>
+            <ul className="bullets" style={{ marginTop: 12 }}>
+              <li><Icon name="x" /><span>{t("ld_isnt_1")}</span></li>
+              <li><Icon name="x" /><span>{t("ld_isnt_2")}</span></li>
+              <li><Icon name="x" /><span>{t("ld_isnt_3")}</span></li>
+            </ul>
           </div>
         </section>
 
         <section className="section">
-          <h2>Why a public chain, and not our database</h2>
+          <h2>{t("ld_how")}</h2>
           <div className="grid-3" style={{ marginTop: 24 }}>
-            <div><h3>No custodian</h3><p className="small muted" style={{ marginTop: 6 }}>The record survives a lost phone, a new employer, a new country, and us going out of business.</p></div>
-            <div><h3>Neutral timestamps</h3><p className="small muted" style={{ marginTop: 6 }}>"The employer did not answer within three days" is checkable by anyone and cannot be back-dated by either side.</p></div>
-            <div><h3>Selective disclosure</h3><p className="small muted" style={{ marginTop: 6 }}>Names and balances never go on chain. A bundle contains only the months you choose; a proof contains only the predicate.</p></div>
+            <div className="step"><div className="n">1</div><div><h3>{t("ld_how_1_t")}</h3><p>{t("ld_how_1")}</p></div></div>
+            <div className="step"><div className="n">2</div><div><h3>{t("ld_how_2_t")}</h3><p>{t("ld_how_2")}</p></div></div>
+            <div className="step"><div className="n">3</div><div><h3>{t("ld_how_3_t")}</h3><p>{t("ld_how_3")}</p></div></div>
           </div>
-          <p className="small muted" style={{ marginTop: 24, maxWidth: "70ch" }}>Built on Ethereum Attestation Service on Base. Attestations are signed by the worker's and employer's own keys; a relayer pays the gas. The bank in this release is synthetic; see the <a href="https://github.com/successaje/ledgerline#honesty-section-what-is-real-and-what-is-synthetic" target="_blank" rel="noreferrer">honesty section</a> for what is real.</p>
+          <div className="cta"><LinkButton href="/verify" icon={<Icon name="shield" />}>{t("ld_verifier")}</LinkButton></div>
         </section>
 
         <footer className="footer">
-          <span>Ledgerline · Web3 for Social Good 2026 · Tech Track</span>
-          <span><Link href="/help">Help</Link> · <Link href="/privacy">Privacy</Link> · <a href="https://github.com/successaje/ledgerline" target="_blank" rel="noreferrer">GitHub</a> · <Link href="/bank">Synthetic bank</Link> · <Link href="/app">App</Link></span>
+          <span>Ledgerline · Web3 for Social Good 2026</span>
+          <span><Link href="/help">Help</Link> · <Link href="/privacy">Privacy</Link> · <a href="https://github.com/successaje/ledgerline" target="_blank" rel="noreferrer">GitHub</a> · <Link href="/bank">Demo bank</Link></span>
         </footer>
       </div>
     </Shell>

@@ -1,7 +1,7 @@
 import type { Dict } from "./en";
 
 /** Bengali (Bangla). Plain polite register ("আপনি"). Needs native review. */
-export const bn: Dict = {
+export const bn: Partial<Dict> = {
   lang_name: "বাংলা",
   months_short: "জানু,ফেব্রু,মার্চ,এপ্রি,মে,জুন,জুলা,আগ,সেপ্টে,অক্টো,নভে,ডিসে",
   months_long: "জানুয়ারি,ফেব্রুয়ারি,মার্চ,এপ্রিল,মে,জুন,জুলাই,আগস্ট,সেপ্টেম্বর,অক্টোবর,নভেম্বর,ডিসেম্বর",

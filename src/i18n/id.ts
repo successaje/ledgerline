@@ -1,7 +1,7 @@
 import type { Dict } from "./en";
 
 /** Bahasa Indonesia. Plain register, "Anda" form. Needs native review. */
-export const id: Dict = {
+export const id: Partial<Dict> = {
   lang_name: "Bahasa Indonesia",
   months_short: "Jan,Feb,Mar,Apr,Mei,Jun,Jul,Agu,Sep,Okt,Nov,Des",
   months_long: "Januari,Februari,Maret,April,Mei,Juni,Juli,Agustus,September,Oktober,November,Desember",

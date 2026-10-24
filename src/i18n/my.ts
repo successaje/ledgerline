@@ -1,7 +1,7 @@
 import type { Dict } from "./en";
 
 /** Burmese (Myanmar). Plain polite register. Needs native review. */
-export const my: Dict = {
+export const my: Partial<Dict> = {
   lang_name: "မြန်မာ",
   months_short: "ဇန်,ဖေ,မတ်,ဧပြီ,မေ,ဇွန်,ဇူ,ဩ,စက်,အောက်,နို,ဒီ",
   months_long: "ဇန်နဝါရီ,ဖေဖော်ဝါရီ,မတ်,ဧပြီ,မေ,ဇွန်,ဇူလိုင်,ဩဂုတ်,စက်တင်ဘာ,အောက်တိုဘာ,နိုဝင်ဘာ,ဒီဇင်ဘာ",

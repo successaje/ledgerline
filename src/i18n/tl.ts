@@ -1,7 +1,7 @@
 import type { Dict } from "./en";
 
 /** Tagalog (Filipino). Written for domestic workers in Singapore; plain register, "ikaw/mo" form. Needs native review. */
-export const tl: Dict = {
+export const tl: Partial<Dict> = {
   lang_name: "Tagalog",
   months_short: "Ene,Peb,Mar,Abr,May,Hun,Hul,Ago,Set,Okt,Nob,Dis",
   months_long: "Enero,Pebrero,Marso,Abril,Mayo,Hunyo,Hulyo,Agosto,Setyembre,Oktubre,Nobyembre,Disyembre",

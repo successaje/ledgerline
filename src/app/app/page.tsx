@@ -1,168 +1,108 @@
 "use client";
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { Shell } from "@/components/ui/Shell";
-import { Notice } from "@/components/ui/Notice";
-import { Button } from "@/components/ui/Button";
+import { Suspense, useEffect, useRef } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Frame } from "@/components/worker/Frame";
+import { useLedgerCtx } from "@/components/worker/LedgerContext";
+import { MonthRow, PayPill, SubmissionPill } from "@/components/worker/bits";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { Pill } from "@/components/ui/Pill";
-import { LedgerSkeleton } from "@/components/ui/Skeleton";
-import { Onboarding } from "@/components/ledger/Onboarding";
-import { LedgerList } from "@/components/ledger/LedgerList";
-import { ShareSheet } from "@/components/ledger/ShareSheet";
-import { BundleSheet } from "@/components/ledger/BundleSheet";
-import { SidePanel } from "@/components/ledger/SidePanel";
-import { RecoverySheet } from "@/components/ledger/RecoverySheet";
-import { Today } from "@/components/ledger/Today";
-import { MonthSheet } from "@/components/ledger/MonthSheet";
-import { ActivityPanel } from "@/components/ledger/Activity";
-import { SettingsSheet } from "@/components/ledger/SettingsSheet";
-import { useConfig } from "@/hooks/useConfig";
-import { useLedger } from "@/hooks/useLedger";
+import { sgd } from "@/domain/format";
+import { submissionOf } from "@/domain/types";
+import { amounts, attention, homePeriod } from "@/domain/paybook";
 import { useToast } from "@/hooks/useToast";
-import { encodeBundle, encodeEmployerRequest, type Bundle } from "@/domain/bundle";
-import type { PayRecord, PayStatus } from "@/domain/types";
-import { PAY_STATUS } from "@/domain/types";
-import { CHAIN_NAME } from "@/services/chain";
 import { logEvent } from "@/services/analytics";
-import type { UserError } from "@/services/errors";
-import { Pwa } from "@/components/ui/Pwa";
-import { useT, LanguageSwitch } from "@/i18n";
+import { useT } from "@/i18n";
 
-type SheetName = "employer" | "pick" | "bundle" | "backup" | "restore" | "month" | "settings" | null;
-
-function AppInner() {
-  const { t, tn } = useT();
-  const { config, ready, error: cfgError } = useConfig();
-  const [ff, setFf] = useState(false);
-  const L = useLedger(config, { fastForward: ff });
-  const { push } = useToast();
+function SampleLoader() {
+  const { L } = useLedgerCtx();
   const sp = useSearchParams();
   const router = useRouter();
-  const [employerUrl, setEmployerUrl] = useState<string | null>(null);
-  const [bundleUrl, setBundleUrl] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<SheetName>(null);
-  const [editing, setEditing] = useState<PayRecord | undefined>(undefined);
-  const [suggested, setSuggested] = useState<number | undefined>(undefined);
-  const [openPeriod, setOpenPeriod] = useState<number | null>(null);
-
-  useEffect(() => { try { setFf(localStorage.getItem("ll.demo.ff") === "1"); } catch {} }, []);
+  const done = useRef(false);
+  const loaded = L.ledger !== undefined;
+  const { loadSample } = L;
   useEffect(() => {
-    if (sp.get("sample") === "1" && L.ledger === null) { L.loadSample(); router.replace("/app"); }
-  }, [sp, L, router]);
-  useEffect(() => {
-    if (L.ledger && openPeriod === null) {
-      const unpaid = L.ledger.records.find(r => r.status === PAY_STATUS.UNPAID);
-      if (unpaid) setOpenPeriod(unpaid.period);
-    }
-  }, [L.ledger, openPeriod]);
-  const setFastForward = (v: boolean) => { setFf(v); try { localStorage.setItem("ll.demo.ff", v ? "1" : "0"); } catch {} };
+    if (done.current || !loaded || sp.get("sample") !== "1") return;
+    done.current = true;
+    logEvent("sample_loaded");
+    loadSample();
+    router.replace("/app");
+  }, [sp, loaded, loadSample, router]);
+  return null;
+}
 
-  const busy = Boolean(L.activity);
-  const errTitle = (ue: UserError) => t(`er_${ue.code}_title` as "er_unknown_title");
-  const errText = (ue: UserError) => t(`er_${ue.code}_text` as "er_unknown_text");
-  const fail = (e: unknown) => { const ue = e as UserError; push({ kind: "error", title: errTitle(ue), body: errText(ue) }); };
-
-  const record = useCallback(async (period: number, status?: PayStatus, amount?: number, note?: string) => {
-    setOpenPeriod(period);
-    logEvent("record_started");
-    try { await L.record(period, status, amount, note); logEvent("record_done"); push({ kind: "success", title: t("ap_recorded_title"), body: t("ap_recorded_text") }); }
-    catch (e) { logEvent("record_failed"); fail(e); }
-  }, [L, push, t]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const prove = useCallback(async (period: number) => {
-    try { await L.prove(period); logEvent("proof_done"); push({ kind: "success", title: t("ap_proof_title"), body: t("ap_proof_text") }); }
-    catch (e) { logEvent("proof_failed"); fail(e); }
-  }, [L, push, t]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const sync = useCallback(async () => {
-    const res = await L.sync(true);
-    if (!res) { push({ kind: "error", title: t("ap_index_fail_title"), body: t("ap_index_fail_text") }); return; }
-    const n = res.answers + res.added + res.updated + res.proofs;
-    push(n ? { kind: "success", title: tn("ap_new_answers", res.answers) + (res.added ? tn("ap_recovered", res.added) : "") } : { kind: "info", title: t("ap_up_to_date"), body: t("ap_up_to_date_text") });
-  }, [L, push, t, tn]);
-
-  const askEmployer = useCallback(() => {
-    if (!L.ledger) return;
-    const items = L.ledger.records.filter(r => r.payEventUID && !r.countersign).map(r => ({ uid: r.payEventUID!, period: r.period, amountCents: r.amountCents, status: r.status }));
-    if (!items.length) { push({ kind: "info", title: t("ap_nothing_title"), body: t("ap_nothing_text") }); return; }
-    const req = encodeEmployerRequest({ worker: L.address, workerName: L.ledger.profile.name, employerLabel: L.ledger.profile.employerLabel, items });
-    setEmployerUrl(`${window.location.origin}/employer?c=${req}`);
-    logEvent("employer_link_created", { months: items.length });
-    setSheet("employer");
-  }, [L, push, t]);
-
-  const createBundle = useCallback((periods: number[]) => {
-    if (!L.ledger || !config) return;
-    const items = L.ledger.records.filter(r => periods.includes(r.period) && r.payEventUID).map(r => ({
-      period: r.period, amountCents: r.amountCents, status: r.status, payEventUID: r.payEventUID!, countersignUID: r.countersign?.uid,
-      proof: r.proof?.proofJson ? { uid: r.proof.uid, proofJson: r.proof.proofJson } : undefined,
-    }));
-    const b: Bundle = { v: 1, worker: { address: L.address, name: L.ledger.profile.name }, employer: { label: L.ledger.profile.employerLabel, id: L.ledger.profile.employerId }, bankAttestor: config.bankAttestor, issuedAt: Date.now(), responseWindowDays: L.ledger.profile.confirmWindowDays, items };
-    setBundleUrl(`${window.location.origin}/verify?b=${encodeBundle(b)}`);
-    logEvent("bundle_created", { months: items.length });
-    setSheet("bundle");
-  }, [L, config]);
-
-  const openMonth = (p: number) => { setOpenPeriod(p); document.getElementById(`month-${p}`)?.scrollIntoView({ behavior: "smooth", block: "center" }); };
-
-  const nav = <><LanguageSwitch /><Pill tone="outline" title={t("chain_pill_title", { chain: CHAIN_NAME })}>{CHAIN_NAME}</Pill></>;
-
-  if (L.ledger === undefined || (!config && !cfgError)) {
-    return <Shell wide nav={nav}><div className="app-grid"><LedgerSkeleton /><div className="skeleton" style={{ height: 180, borderRadius: 14 }} /></div></Shell>;
-  }
-
-  if (!L.ledger) {
-    return <Shell wide nav={nav}>{cfgError && <div style={{ marginBottom: 16 }}><Notice kind="error" title={t("ap_no_server_title")}>{cfgError}</Notice></div>}<Onboarding onStart={i => { logEvent("onboarding_started"); L.start(i); }} onSample={() => { logEvent("sample_loaded"); L.loadSample(); }} onRestore={() => setSheet("restore")} /><RecoverySheet open={sheet === "restore"} onClose={() => setSheet(null)} mode="restore" onRestore={L.recover} /></Shell>;
-  }
-
-  const ledger = L.ledger;
+export default function HomePage() {
   return (
-    <Shell wide nav={nav}>
-      <div style={{ display: "grid", gap: 16 }}>
-        {!ready && !cfgError && <Notice kind="warn" title={t("ap_not_ready_title")}>{t("ap_not_ready_text")}</Notice>}
-        {cfgError && <Notice kind="error" title={t("ap_no_server_title")}>{cfgError}</Notice>}
-        {L.lastError && !busy && (
-          <Notice kind="error" title={errTitle(L.lastError)} action={<Button size="sm" onClick={L.clearError} icon={<Icon name="x" size={14} />}>{t("ap_dismiss")}</Button>}>{errText(L.lastError)}</Notice>
-        )}
-        <Pwa worthInstalling={L.stats.recorded > 0} />
-        <Today name={ledger.profile.name} due={L.due} news={L.news} busy={busy || !ready}
-          onRecordDue={(p, s) => { L.addMonth(p, s); void record(p, s); }}
-          onRecordDrafts={() => L.recordAllPending().catch(() => {})}
-          onAskEmployer={askEmployer} onOpenMonth={openMonth} onDismissNews={L.clearNews} />
-        <div className="app-grid">
-          <LedgerList ledger={ledger} activity={L.activity} fastForward={ff} busy={busy || !ready} openPeriod={openPeriod} onOpenPeriod={setOpenPeriod}
-            onRecord={(p, s) => void record(p, s)} onEdit={r => { setEditing(r); setSuggested(undefined); setSheet("month"); }} onProve={p => void prove(p)} onAskEmployer={askEmployer} />
-          <SidePanel stats={L.stats} syncing={L.syncing} busy={busy || !ready}
-            onRecordAll={() => L.recordAllPending().catch(() => {})} onSync={sync} onAskEmployer={askEmployer} onBundle={() => setSheet("pick")}
-            onAddMonth={() => { setEditing(undefined); setSuggested(undefined); setSheet("month"); }} onSettings={() => setSheet("settings")}>
-            <ActivityPanel events={L.history} onOpen={openMonth} />
-          </SidePanel>
-        </div>
-      </div>
-
-      <div className="actionbar mobile-only">
-        <Button block disabled={busy || !ready || L.stats.recorded === 0} onClick={askEmployer} icon={<Icon name="whatsapp" />}>{t("sp_ask_short")}</Button>
-        <Button variant="accent" block disabled={busy || !ready || L.stats.recorded === 0} onClick={() => setSheet("pick")} icon={<Icon name="shield" />}>{t("sp_bundle_short")}</Button>
-      </div>
-
-      <ShareSheet open={sheet === "employer"} onClose={() => setSheet(null)} title={t("sh_emp_title")} url={employerUrl} intro={t("sh_emp_intro")} whatsappText={t("sh_emp_wa")} openLabel={t("sh_emp_open")} />
-      <RecoverySheet open={sheet === "backup"} onClose={() => setSheet("settings")} mode="backup" backup={L.backup} />
-      <BundleSheet open={sheet === "pick"} onClose={() => setSheet(null)} ledger={ledger} onCreate={createBundle} />
-      <ShareSheet open={sheet === "bundle"} onClose={() => setSheet(null)} title={t("sh_bundle_title")} url={bundleUrl} intro={t("sh_bundle_intro")} whatsappText={t("sh_bundle_wa")} openLabel={t("sh_bundle_open")} />
-      <MonthSheet open={sheet === "month"} onClose={() => setSheet(null)} record={editing} suggestedPeriod={suggested}
-        takenPeriods={ledger.records.map(r => r.period)} salaryCents={ledger.profile.salaryCents} busy={busy || !ready}
-        onSaveDraft={(p, s, a, n) => { if (editing) L.updateMonth(p, { status: s, amountCents: a, note: n }); else L.addMonth(p, s, a, n); setOpenPeriod(p); logEvent("month_edited"); push({ kind: "success", title: t("ap_draft_saved"), body: t("ap_draft_saved_text") }); }}
-        onRecord={(p, s, a, n) => { if (!editing) L.addMonth(p, s, a, n); return record(p, s, a, n); }} />
-      <SettingsSheet open={sheet === "settings"} onClose={() => setSheet(null)} profile={ledger.profile} address={L.address}
-        fastForward={ff} onFastForward={setFastForward}
-        onSave={p => { L.updateProfile(p); logEvent("settings_saved"); push({ kind: "success", title: t("ap_settings_saved") }); }}
-        onBackup={() => setSheet("backup")} onExport={L.exportJson}
-        onReset={() => { if (confirm(t("se_clear_confirm"))) { L.reset(); setSheet(null); } }} />
-    </Shell>
+    <>
+      <Suspense fallback={null}><SampleLoader /></Suspense>
+      <Frame>{({ L, ledger, fastForward, ready }) => <Home L={L} ledger={ledger} fastForward={fastForward} ready={ready} />}</Frame>
+    </>
   );
 }
 
-export default function AppPage() {
-  return <Suspense fallback={<Shell wide><LedgerSkeleton /></Shell>}><AppInner /></Suspense>;
+function Home({ L, ledger, fastForward, ready }: { L: ReturnType<typeof useLedgerCtx>["L"]; ledger: NonNullable<ReturnType<typeof useLedgerCtx>["L"]["ledger"]>; fastForward: boolean; ready: boolean }) {
+  const { t, tn, monthLabel } = useT();
+  const { push } = useToast();
+  const period = homePeriod(ledger);
+  const rec = ledger.records.find(r => r.period === period);
+  const a = rec ? amounts(rec, ledger.profile.salaryCents) : null;
+  const items = attention(ledger, fastForward);
+  const recent = [...ledger.records].sort((x, y) => y.period - x.period).slice(0, 3);
+  const busy = Boolean(L.activity);
+
+  const checkUnknown = async (periods: number[]) => {
+    for (const p of periods) {
+      const r = await L.checkSubmission(p);
+      if (r === "confirmed") push({ kind: "success", title: t("st2_confirmed"), body: monthLabel(p, true) });
+      else if (r === "failed") push({ kind: "error", title: t("st2_failed"), body: monthLabel(p, true) });
+      else push({ kind: "info", title: t("ss_still_pending") });
+    }
+  };
+
+  return (
+    <>
+      <div className="page-head"><div><p className="small muted">{t("hm_hi", { name: ledger.profile.name })}</p><h1>{t("nv_home")}</h1></div></div>
+
+      <section className="paybook" aria-labelledby="pb-month">
+        <div className="paybook-head">
+          <h2 className="paybook-month" id="pb-month">{monthLabel(period, true)}</h2>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {rec && <PayPill status={rec.status} />}
+            {rec && submissionOf(rec) !== "confirmed" && <SubmissionPill state={submissionOf(rec)} />}
+          </div>
+        </div>
+        <div className="paybook-grid">
+          <div className="paybook-cell"><div className="k">{t("hm_expected")}</div><div className="v">{sgd(a ? a.expected : ledger.profile.salaryCents)}</div></div>
+          <div className="paybook-cell"><div className="k">{t("hm_received")}</div><div className="v">{a ? sgd(a.received) : "—"}</div>{!a && <div className="note">{t("hm_not_recorded")}</div>}</div>
+          <div className="paybook-cell"><div className="k">{t("hm_difference")}</div><div className={`v ${a && a.gap > 0 ? "diff-pos" : ""}`}>{a ? sgd(a.gap) : "—"}</div><div className="note">{a ? (a.gap > 0 ? t("hm_short", { amount: sgd(a.gap) }) : t("hm_nothing_missing")) : t("hm_not_recorded")}</div></div>
+        </div>
+        <div className="paybook-action">
+          {rec
+            ? <LinkButton variant="primary" size="lg" href={`/app/records/${period}`} icon={<Icon name="arrow" />}>{t("hm_view_record")}</LinkButton>
+            : <LinkButton variant="primary" size="lg" href={`/app/record?period=${period}`} icon={<Icon name="plus" />}>{t("hm_record_month", { month: monthLabel(period) })}</LinkButton>}
+        </div>
+      </section>
+
+      <section className="card" aria-labelledby="attn-h">
+        <h2 id="attn-h">{t("hm_attention")}</h2>
+        {items.length === 0 ? <p className="muted" style={{ marginTop: 8 }}>{t("hm_all_clear")}</p> : (
+          <div style={{ marginTop: 4 }}>
+            {items.map(it => {
+              if (it.kind === "backup") return <div className="attn" key="backup"><div><div className="t">{t("hm_backup_title")}</div><div className="s">{t("hm_backup_text")}</div></div><LinkButton size="sm" href="/app/settings#backup">{t("hm_backup_cta")}</LinkButton></div>;
+              if (it.kind === "unknown") return <div className="attn" key="unknown"><div><div className="t">{tn("hm_unknown", it.periods.length)}</div><div className="s">{t("hm_unknown_text")}</div></div><Button size="sm" onClick={() => void checkUnknown(it.periods)} icon={<Icon name="refresh" size={14} />}>{t("hm_check_status")}</Button></div>;
+              if (it.kind === "drafts") return <div className="attn" key="drafts"><div><div className="t">{tn("hm_draft", it.periods.length)}</div><div className="s">{t("hm_draft_text")}</div></div><LinkButton size="sm" href={`/app/records/${it.periods[0]}`}>{t("hm_view")}</LinkButton></div>;
+              if (it.kind === "no_response") return <div className="attn" key="noresp"><div><div className="t">{tn("hm_noresp", it.periods.length)}</div><div className="s">{t("hm_noresp_text")}</div></div><LinkButton size="sm" href="/app/records?ask=1" >{t("hm_ask")}</LinkButton></div>;
+              return <div className="attn" key="waiting"><div><div className="t">{tn("hm_waiting", it.periods.length)}</div><div className="s">{t("hm_waiting_text")}</div></div><Button size="sm" disabled={busy || !ready || L.syncing} loading={L.syncing} onClick={() => void L.sync(false)} icon={<Icon name="refresh" size={14} />}>{t("sp_check")}</Button></div>;
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="card" aria-labelledby="recent-h">
+        <div className="page-head" style={{ marginBottom: 4 }}><h2 id="recent-h">{t("hm_recent")}</h2><Link href="/app/records" className="small">{t("hm_all_records")} ({ledger.records.length})</Link></div>
+        {recent.length === 0 ? <p className="muted">{t("rl_empty_text")}</p> : recent.map(r => <MonthRow key={r.period} r={r} salaryCents={ledger.profile.salaryCents} windowDays={ledger.profile.confirmWindowDays} fastForward={fastForward} />)}
+        <div style={{ marginTop: 12 }}><LinkButton href="/app/record" icon={<Icon name="plus" />}>{t("hm_add_month")}</LinkButton></div>
+      </section>
+    </>
+  );
 }

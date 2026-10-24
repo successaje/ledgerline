@@ -81,3 +81,21 @@ export async function delegatedAttest(opts: {
     throw toUserError(e);
   }
 }
+
+/**
+ * Looks a sent transaction up directly on the chain, for records whose result this device never learnt
+ * (a closed tab, a lost connection). Resolves to confirmed with the attestation UID, failed, or pending.
+ */
+export async function resolveSubmission(txHash: string): Promise<{ state: "confirmed"; uid: string } | { state: "failed" } | { state: "pending" }> {
+  const p = provider();
+  const receipt = await p.getTransactionReceipt(txHash);
+  if (!receipt) return { state: "pending" };
+  if (receipt.status !== 1) return { state: "failed" };
+  for (const log of receipt.logs) {
+    try {
+      const parsed = EAS_IFACE.parseLog({ topics: [...log.topics], data: log.data });
+      if (parsed?.name === "Attested") return { state: "confirmed", uid: parsed.args.uid };
+    } catch {}
+  }
+  return { state: "failed" };
+}

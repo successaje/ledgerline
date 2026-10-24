@@ -23,23 +23,70 @@ export type BankProof = {
   at: number;
 };
 
+/**
+ * Where a record stands between this device and the chain.
+ * draft: only on this device. awaiting: signed here, not yet sent. submitted: the relayer returned a transaction hash,
+ * no receipt yet. confirmed: the attestation exists on chain. failed: nothing reached the chain. unknown: a transaction
+ * was sent but this device could not learn its result; reconciliation resolves it.
+ */
+export type SubmissionState = "draft" | "awaiting" | "submitted" | "confirmed" | "failed" | "unknown";
+
+export type Submission = {
+  state: SubmissionState;
+  txHash?: string;
+  /** Stable error code when state is failed or unknown. */
+  error?: string;
+  /** When the state last changed. */
+  at: number;
+};
+
 export type PayRecord = {
   period: Period;
+  /** What the worker was due for the month. Local; the v1 schema carries only the received amount. */
+  expectedCents?: number;
+  /** The amount recorded as received. For "not paid" this is 0; for "paid in full" it equals expected. */
   amountCents: number;
   status: PayStatus;
+  /** Date the money arrived (YYYY-MM-DD), when the worker knows it. Local only. */
+  receivedOn?: string;
   note?: string;
+  submission?: Submission;
   payEventUID?: string;
   payEventTx?: string;
   signedAt?: number;
+  /** Local link to the record this one corrected (the earlier attestation's UID). */
+  supersedes?: string;
+  /** Earlier versions of this month that were corrected, oldest first. Kept so the detail view can show them. */
+  previous?: { uid: string; txHash?: string; status: PayStatus; amountCents: number; expectedCents?: number; signedAt?: number }[];
   countersign?: Countersign;
   proof?: BankProof;
 };
+
+/** Expected pay for a record, falling back to the profile when the record predates the field. */
+export function expectedOf(r: Pick<PayRecord, "expectedCents" | "amountCents" | "status">, profileSalaryCents: number) {
+  if (typeof r.expectedCents === "number") return r.expectedCents;
+  return r.status === PAY_STATUS.PAID ? r.amountCents : profileSalaryCents;
+}
+
+/** Amount recorded as received. Older unpaid records stored the salary in amountCents; treat them as 0 received. */
+export function receivedOf(r: Pick<PayRecord, "expectedCents" | "amountCents" | "status">) {
+  return r.status === PAY_STATUS.UNPAID ? 0 : r.amountCents;
+}
+
+/** The submission state of a record, derived for ledgers saved before the field existed. */
+export function submissionOf(r: Pick<PayRecord, "submission" | "payEventUID">): SubmissionState {
+  if (r.submission) return r.submission.state;
+  return r.payEventUID ? "confirmed" : "draft";
+}
 
 export type Profile = {
   name: string;
   employerLabel: string;
   employerId: string;
+  /** Expected monthly pay; the default for new records. */
   salaryCents: number;
+  /** The day of the month pay is usually received. Drives "record this month" prompts. */
+  payDay?: number;
   payWindow: { fromDay: number; toDay: number };
   /** Days the employer has to answer before silence is shown as evidence. */
   confirmWindowDays: number;
@@ -52,6 +99,12 @@ export type LedgerMeta = {
   lastSeenAt?: number;
   lastSyncAt?: number;
   dismissed?: Record<string, number>;
+  /** Set once the person has confirmed they wrote their recovery words down. */
+  backupVerifiedAt?: number;
+  /** Set when the person chose to skip backup during onboarding; Home keeps reminding. */
+  backupSkippedAt?: number;
+  /** True for the sample ledger loaded from "Try a sample". */
+  demo?: boolean;
 };
 
 export type Ledger = { profile: Profile; records: PayRecord[]; meta: LedgerMeta };

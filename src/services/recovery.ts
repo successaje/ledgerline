@@ -64,12 +64,15 @@ export async function mergeFromChain(ledger: Ledger, address: string, schemas: {
   for (const [period, a] of byPeriod) {
     const i = records.findIndex(r => r.period === period);
     const fromChain = { payEventUID: a.id, payEventTx: a.txid, signedAt: Number(a.time) * 1000, status: Number(a.decoded.status) as PayStatus, amountCents: Number(a.decoded.amountCents) };
-    if (i === -1) { records.push({ period, ...fromChain }); added++; }
+    const confirmed = { state: "confirmed" as const, txHash: a.txid, at: Number(a.time) * 1000 };
+    if (i === -1) { records.push({ period, ...fromChain, submission: confirmed }); added++; }
     else if (records[i].payEventUID !== a.id) {
       // Chain has a newer or unknown attestation for this month; adopt it but keep notes and any proof/countersign that reference it.
       const keepCountersign = records[i].countersign && records[i].payEventUID === a.id ? records[i].countersign : undefined;
-      records[i] = { ...records[i], ...fromChain, countersign: keepCountersign, proof: records[i].proof && records[i].payEventUID === a.id ? records[i].proof : undefined };
+      records[i] = { ...records[i], ...fromChain, submission: confirmed, countersign: keepCountersign, proof: records[i].proof && records[i].payEventUID === a.id ? records[i].proof : undefined };
       updated++;
+    } else if (records[i].submission && records[i].submission!.state !== "confirmed") {
+      records[i] = { ...records[i], submission: confirmed };
     }
   }
   records.sort((x, y) => x.period - y.period);
