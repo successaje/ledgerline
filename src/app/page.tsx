@@ -66,7 +66,7 @@ export default function Landing() {
 
         <footer className="footer">
           <span>Ledgerline · Web3 for Social Good 2026 · Tech Track</span>
-          <span><a href="https://github.com/successaje/ledgerline" target="_blank" rel="noreferrer">GitHub</a> · <Link href="/bank">Synthetic bank</Link> · <Link href="/app">App</Link></span>
+          <span><Link href="/help">Help</Link> · <Link href="/privacy">Privacy</Link> · <a href="https://github.com/successaje/ledgerline" target="_blank" rel="noreferrer">GitHub</a> · <Link href="/bank">Synthetic bank</Link> · <Link href="/app">App</Link></span>
         </footer>
       </div>
     </Shell>
