@@ -62,8 +62,7 @@ p { margin: 0; }
 .topbar-inner { display: flex; align-items: center; justify-content: space-between; height: 56px; gap: var(--sp-3); }
 .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: var(--fs-lg); letter-spacing: -0.01em; color: var(--ink); }
 .brand:hover { text-decoration: none; }
-.brand-mark { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); display: inline-grid; place-items: center; }
-.brand-mark span { width: 12px; height: 2px; background: var(--paper); box-shadow: 0 -4px 0 var(--paper), 0 4px 0 var(--green); display: block; }
+.brand svg { flex: none; }
 .topbar-nav { display: flex; align-items: center; gap: var(--sp-2); }
 .main { flex: 1; padding: var(--sp-6) 0 calc(var(--sp-16) + 56px); }
 @media (min-width: 760px) { .main { padding-bottom: var(--sp-16); } }

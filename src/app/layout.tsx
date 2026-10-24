@@ -7,7 +7,9 @@ export const metadata: Metadata = {
   title: { default: "Ledgerline", template: "%s · Ledgerline" },
   description: "The payslip the employer cannot take back. A worker-held, employer-countersigned, bank-proven pay record.",
   manifest: "/manifest.json",
-  openGraph: { title: "Ledgerline", description: "The payslip the employer cannot take back.", type: "website" },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://ledgerline-sg.vercel.app"),
+  openGraph: { title: "Ledgerline", description: "The payslip the employer cannot take back. Worker-held, employer-countersigned, bank-proven pay records.", type: "website", siteName: "Ledgerline" },
+  twitter: { card: "summary_large_image", title: "Ledgerline", description: "The payslip the employer cannot take back." },
 };
 export const viewport: Viewport = { themeColor: "#f7f5f0", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
