@@ -8,7 +8,9 @@
 
 **Links:** Live app https://ledgerline-sg.vercel.app · Repo https://github.com/successaje/ledgerline · Verifier https://ledgerline-sg.vercel.app/verify · Schemas in SCHEMAS.md
 
-**Submitted:** Tech Track build https://dorahacks.io/build/50263 (24 Oct 2026). Idea Track companion "Due Process" https://dorahacks.io/build/50257 (24 Oct 2026). Both under organizer review; presentation videos are invited 26–31 Oct.
+**Submitted:** Tech Track build https://dorahacks.io/build/50263 (24 Oct 2026). Idea Track companion "Due Process" https://dorahacks.io/build/50257 (24 Oct 2026). Both under organizer review.
+
+**Demo video (2 min, captioned screen recording of the live site, no voiceover):** https://ledgerline-sg.vercel.app/demo/ledgerline-demo.mp4 · recorded by `scripts/record-demo.mjs` against production, so it can be re-recorded after any change.
 
 ## Vision (paste into the BUIDL form)
 
