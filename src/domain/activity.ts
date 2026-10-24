@@ -2,7 +2,7 @@ import type { Ledger, Period } from "./types";
 import { periodLabel, sgd } from "./format";
 
 export type ActivityKind = "recorded" | "confirmed" | "disputed" | "proof" | "unpaid";
-export type ActivityEvent = { at: number; kind: ActivityKind; period: Period; text: string; uid?: string };
+export type ActivityEvent = { at: number; kind: ActivityKind; period: Period; text: string; uid?: string; amountCents: number; status: number; satisfied?: boolean };
 
 /** Human-readable history derived from the ledger. Newest first. No hashes in the text. */
 export function deriveActivity(ledger: Ledger): ActivityEvent[] {
@@ -10,15 +10,15 @@ export function deriveActivity(ledger: Ledger): ActivityEvent[] {
   for (const r of ledger.records) {
     const m = periodLabel(r.period);
     if (r.payEventUID && r.signedAt) {
-      out.push({ at: r.signedAt, kind: r.status === 2 ? "unpaid" : "recorded", period: r.period, uid: r.payEventUID,
+      out.push({ at: r.signedAt, kind: r.status === 2 ? "unpaid" : "recorded", period: r.period, uid: r.payEventUID, amountCents: r.amountCents, status: r.status,
         text: r.status === 2 ? `You recorded ${m} as not paid (${sgd(r.amountCents)})` : r.status === 3 ? `You recorded ${m} as partly paid (${sgd(r.amountCents)})` : `You recorded ${m} as paid (${sgd(r.amountCents)})` });
     }
     if (r.countersign) {
-      out.push({ at: r.countersign.at, kind: r.countersign.decision === 1 ? "confirmed" : "disputed", period: r.period, uid: r.countersign.uid,
+      out.push({ at: r.countersign.at, kind: r.countersign.decision === 1 ? "confirmed" : "disputed", period: r.period, uid: r.countersign.uid, amountCents: r.amountCents, status: r.status,
         text: r.countersign.decision === 1 ? `Employer confirmed ${m}` : `Employer disputed ${m}` });
     }
     if (r.proof) {
-      out.push({ at: r.proof.at, kind: "proof", period: r.period, uid: r.proof.uid,
+      out.push({ at: r.proof.at, kind: "proof", period: r.period, uid: r.proof.uid, amountCents: r.amountCents, status: r.status, satisfied: r.proof.satisfied,
         text: r.proof.satisfied ? `Bank proof added for ${m}: no salary-sized credit in the pay window` : `Bank proof added for ${m}: a matching credit was found` });
     }
   }

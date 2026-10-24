@@ -69,6 +69,10 @@ Flow of a record: `useLedger.record` → `services/attest.delegatedAttest` (enco
 - **Reclaim zkFetch (optional).** zkTLS proof over the statement endpoint; enabled by credentials, otherwise an honest signed-attestor stand-in with the same shape.
 - No token, no governance, no custody.
 
+## Languages
+
+The worker app is available in English, Tagalog and Bahasa Indonesia. The language follows the phone's setting (`tl`/`fil` → Tagalog, `id` → Bahasa Indonesia) and can be changed in the header or in Settings; the choice is remembered on the device. Strings live in `src/i18n/en.ts`, `tl.ts` and `id.ts`; the `Dict` type guarantees every key exists in every language. The Tagalog and Bahasa Indonesia texts were written without a native reviewer: corrections are welcome as pull requests against those two files.
+
 ## Chain details
 
 - Network: Base Sepolia (chain id 84532). EAS `0x4200000000000000000000000000000000000021`, Schema Registry `0x4200000000000000000000000000000000000020`.

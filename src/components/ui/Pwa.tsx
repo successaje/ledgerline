@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 import { Button } from "./Button";
 import { Icon } from "./Icon";
 import { logEvent } from "@/services/analytics";
+import { useT } from "@/i18n";
 
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 
 /** Registers the service worker and, once the person has something worth keeping, offers to install. */
 export function Pwa({ worthInstalling }: { worthInstalling: boolean }) {
+  const { t } = useT();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(true);
 
@@ -22,14 +24,15 @@ export function Pwa({ worthInstalling }: { worthInstalling: boolean }) {
   }, []);
 
   if (!deferred || dismissed || !worthInstalling) return null;
+  const dismiss = () => { try { localStorage.setItem("ll.pwa.dismissed", "1"); } catch {} setDismissed(true); };
   return (
     <div className="notice notice-info no-print" role="status" style={{ alignItems: "center" }}>
       <Icon name="share" size={18} />
       <div className="row" style={{ gap: 12 }}>
-        <div><strong>Add Ledgerline to your home screen</strong><div>Opens like an app and works without a connection for reading your record.</div></div>
+        <div><strong>{t("pw_title")}</strong><div>{t("pw_text")}</div></div>
         <div style={{ display: "flex", gap: 6 }}>
-          <Button size="sm" variant="primary" onClick={async () => { await deferred.prompt(); const c = await deferred.userChoice; if (c.outcome !== "accepted") { try { localStorage.setItem("ll.pwa.dismissed", "1"); } catch {} setDismissed(true); } }}>Add</Button>
-          <Button size="sm" variant="ghost" onClick={() => { try { localStorage.setItem("ll.pwa.dismissed", "1"); } catch {} setDismissed(true); }} aria-label="Not now"><Icon name="x" size={14} /></Button>
+          <Button size="sm" variant="primary" onClick={async () => { await deferred.prompt(); const c = await deferred.userChoice; if (c.outcome !== "accepted") dismiss(); }}>{t("pw_add")}</Button>
+          <Button size="sm" variant="ghost" onClick={dismiss} aria-label={t("pw_not_now")}><Icon name="x" size={14} /></Button>
         </div>
       </div>
     </div>
