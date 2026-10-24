@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#F7F5F0"/>
+  <g transform="translate(80 80)">
+    <rect width="96" height="96" rx="21" fill="#17191C"/>
+    <path d="M27 34.5h24M27 48h42M27 61.5h42" stroke="#F7F5F0" stroke-width="6.75" stroke-linecap="round"/>
+    <circle cx="64.5" cy="34.5" r="7.5" fill="none" stroke="#FBBF24" stroke-width="5.25"/>
+    <path d="M64.5 30.75v4.5l3 2.25" stroke="#FBBF24" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="122" y="68" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="56" font-weight="700" letter-spacing="-1.2" fill="#17191C">Due <tspan fill="#9A6A12">Process</tspan></text>
+  </g>
+  <text x="80" y="330" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="72" font-weight="700" letter-spacing="-2" fill="#17191C">Deactivated by an algorithm?</text>
+  <text x="80" y="415" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="72" font-weight="700" letter-spacing="-2" fill="#17191C">Your record. Their clock.</text>
+  <text x="80" y="490" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="28" fill="#4A4F57">A worker-held employment log and a public appeal clock for platform workers.</text>
+  <line x1="80" y1="540" x2="1120" y2="540" stroke="#E3DFD6" stroke-width="2"/>
+  <text x="80" y="580" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="22" fill="#7B818B">A Ledgerline project · Idea Track · Web3 for Social Good 2026</text>
+</svg>
